@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="./public/icon.png" width="160" alt="MarkLight Logo" />
+  <img src="./public/icon.png" width="160" alt="MarkdownEd Logo" />
 </p>
 
-<h1 align="center">MarkLight</h1>
+<h1 align="center">MarkdownEd</h1>
 
 <p align="center">
   <strong>A local-first Markdown editor built with Tauri 2, a Rust domain core, and TipTap.</strong>
@@ -19,13 +19,13 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/xiaodou997/marklight/releases">
-    <img src="https://img.shields.io/github/v/release/xiaodou997/marklight?style=flat-square&color=blue" alt="Version" />
+  <a href="https://github.com/skillful2002/MarkdownEd/releases">
+    <img src="https://img.shields.io/github/v/release/skillful2002/MarkdownEd?style=flat-square&color=blue" alt="Version" />
   </a>
-  <a href="https://gitee.com/xiaodou997/marklight">
-    <img src="https://img.shields.io/badge/Gitee-xiaodou997-red?style=flat-square&logo=gitee" alt="Gitee" />
+  <a href=https://gitee.com/liuzhengguo/MarkdownEd">
+    <img src="https://img.shields.io/badge/Gitee-liuzhengguo-red?style=flat-square&logo=gitee" alt="Gitee" />
   </a>
-  <a href="https://github.com/xiaodou997/marklight/blob/main/LICENSE">
+  <a href="https://github.com/skillful2002/MarkdownEd/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/License-Apache--2.0-green?style=flat-square" alt="Apache-2.0" />
   </a>
 </p>
@@ -40,7 +40,7 @@
 
 ## Architecture
 
-MarkLight uses three clear layers:
+MarkdownEd uses three clear layers:
 
 - Vue 3 + Pinia + TipTap: UI, editor interactions, and command dispatch.
 - Tauri 2: plugins, permission boundaries, and the command/event bridge.
@@ -100,4 +100,4 @@ cargo check --manifest-path src-tauri/Cargo.toml
 
 ## License
 
-MarkLight is open source under the [Apache License 2.0](LICENSE).
+MarkdownEd is open source under the [Apache License 2.0](LICENSE).

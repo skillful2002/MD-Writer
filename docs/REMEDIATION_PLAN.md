@@ -1,4 +1,4 @@
-# MarkLight Remediation Plan
+# MarkdownEd Remediation Plan
 
 更新时间：2026-06-11
 

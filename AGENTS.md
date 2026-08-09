@@ -2,7 +2,7 @@
 
 ## Project snapshot
 
-- MarkLight is a Tauri 2 desktop Markdown editor.
+- MarkdownEd is a Tauri 2 desktop Markdown editor.
 - Frontend lives in `src/` and is built with Vue 3, Pinia, Vite, TypeScript, and Tailwind.
 - Desktop/native code lives in `src-tauri/` and exposes filesystem, config, watcher, window, image, and print commands to the frontend.
 - The editor core is TipTap/ProseMirror with a custom Markdown parser and serializer in `src/components/Editor/tiptap/markdown/`.
@@ -141,7 +141,7 @@ bun run test
 ### Settings persistence has two backends on purpose
 
 - Main settings are stored in the native config file via `read_config` and `write_config`.
-- Focus mode still uses `localStorage` under `marklight-focus-mode`.
+- Focus mode still uses `localStorage` under `markdowned-focus-mode`.
 - There is also one-time migration logic from legacy `localStorage` settings into the config file.
 
 ### Theme application is CSS-variable driven

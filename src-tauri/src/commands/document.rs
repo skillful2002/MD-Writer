@@ -170,7 +170,7 @@ fn temp_path(path: &Path) -> PathBuf {
     let file_name = path
         .file_name()
         .and_then(|name| name.to_str())
-        .unwrap_or("marklight");
+        .unwrap_or("markdown-ed");
     path.with_file_name(format!(".{}.{}.tmp", file_name, millis))
 }
 
@@ -221,7 +221,7 @@ mod tests {
             .map(|duration| duration.as_millis())
             .unwrap_or(0);
         let seq = TEST_COUNTER.fetch_add(1, Ordering::Relaxed);
-        let dir = std::env::temp_dir().join(format!("marklight-document-test-{}-{}", millis, seq));
+        let dir = std::env::temp_dir().join(format!("markdown-ed-document-test-{}-{}", millis, seq));
         fs::create_dir_all(&dir).unwrap();
         dir
     }

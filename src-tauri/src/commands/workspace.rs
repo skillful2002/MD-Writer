@@ -171,7 +171,7 @@ mod tests {
             .unwrap_or(0);
         let seq = TEST_COUNTER.fetch_add(1, Ordering::Relaxed);
         let dir =
-            std::env::temp_dir().join(format!("marklight-workspace-test-{}-{}", millis, seq));
+            std::env::temp_dir().join(format!("markdown-ed-workspace-test-{}-{}", millis, seq));
         fs::create_dir_all(&dir).unwrap();
         dir
     }

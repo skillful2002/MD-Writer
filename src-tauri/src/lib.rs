@@ -294,7 +294,7 @@ pub fn run() {
                 apply_macos_window_background(&main_window, "#ffffff")?;
 
                 #[cfg(debug_assertions)]
-                if std::env::var_os("MARKLIGHT_OPEN_DEVTOOLS").is_some() {
+                if std::env::var_os("MARKDOWN_ED_OPEN_DEVTOOLS").is_some() {
                     main_window.open_devtools();
                 }
 

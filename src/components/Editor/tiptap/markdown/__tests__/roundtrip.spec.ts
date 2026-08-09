@@ -250,7 +250,7 @@ describe('Round-trip: parse → serialize', () => {
     });
 
     it('frontmatter', () => {
-      const md = '---\ntitle: MarkLight\ntags:\n  - editor\n---\n\n# Hello\n';
+      const md = '---\ntitle: MarkdownEd\ntags:\n  - editor\n---\n\n# Hello\n';
       expect(roundTrip(md)).toBe(normalize(md));
     });
 

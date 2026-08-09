@@ -288,7 +288,7 @@ async function renderMermaidSvg(source: string): Promise<string | null> {
       securityLevel: 'strict',
       theme: document.documentElement.classList.contains('dark') ? 'dark' : 'default',
     });
-    const id = `marklight-export-mermaid-${(mermaidCounter += 1)}`;
+    const id = `markdown-ed-export-mermaid-${(mermaidCounter += 1)}`;
     const { svg } = await mermaid.render(id, source);
     return svg;
   } catch {

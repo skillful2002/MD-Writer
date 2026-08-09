@@ -2,7 +2,7 @@ import { onBeforeUnmount, onMounted, watch } from 'vue';
 
 import { useSettingsStore } from '../../../stores/settings';
 
-const customCssId = 'marklight-custom-editor-css';
+const customCssId = 'markdown-ed-custom-editor-css';
 const hljsDarkCssId = 'hljs-dark-theme';
 
 function injectCustomCSS(css: string) {

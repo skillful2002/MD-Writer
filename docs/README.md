@@ -1,4 +1,4 @@
-# MarkLight Docs
+# MarkdownEd Docs
 
 本目录收纳项目的长期文档，根目录只保留入口文件和生态约定文件。
 

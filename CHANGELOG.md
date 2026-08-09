@@ -308,7 +308,7 @@
 ## [0.2.0] - 2026-03-07
 
 ### 🚀 新功能
-- feat: integrate help menu, GitHub links and introduce Chinese name '墨光'
+- feat: integrate help menu, GitHub links and introduce Chinese name '纽新'
 - feat(fs): integrate notify for real-time file system watching
 - feat(safety): implement file modification conflict detection
 - feat(platform): abstract cross-platform shortcut logic and modifier keys
@@ -328,7 +328,7 @@
 - feat: 实现自动保存功能
 - feat: 更新 Windows Store 图标
 - feat: 更新应用图标
-- feat: MarkLight v1.0.0-alpha - 初始版本
+- feat: MarkdownEd v1.0.0-alpha - 初始版本
 
 ### 🐛 修复
 - fix(tauri): provide explicit type for None in open_path call

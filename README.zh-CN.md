@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="./public/icon.png" width="160" alt="MarkLight Logo" />
+  <img src="./public/icon.png" width="160" alt="MarkdownEd Logo" />
 </p>
 
-<h1 align="center">墨光 (MarkLight)</h1>
+<h1 align="center">纽新 (MarkdownEd)</h1>
 
 <p align="center">
   <strong>一款基于 Tauri 2、Rust 领域内核与 TipTap 的本地优先 Markdown 编辑器</strong>
@@ -19,13 +19,13 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/xiaodou997/marklight/releases">
-    <img src="https://img.shields.io/github/v/release/xiaodou997/marklight?style=flat-square&color=blue" alt="Version" />
+  <a href="https://github.com/skillful2002/MarkdownEd/releases">
+    <img src="https://img.shields.io/github/v/release/skillful2002/MarkdownEd?style=flat-square&color=blue" alt="Version" />
   </a>
-  <a href="https://gitee.com/xiaodou997/marklight">
-    <img src="https://img.shields.io/badge/Gitee-xiaodou997-red?style=flat-square&logo=gitee" alt="Gitee" />
+  <a href="https://gitee.com/liuzhengguo/MarkdownEd">
+    <img src="https://img.shields.io/badge/Gitee-liuzhengguo-red?style=flat-square&logo=gitee" alt="Gitee" />
   </a>
-  <a href="https://github.com/xiaodou997/marklight/blob/main/LICENSE">
+  <a href="https://github.com/skillful2002/MarkdownEd/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/License-Apache--2.0-green?style=flat-square" alt="Apache-2.0" />
   </a>
 </p>
@@ -40,7 +40,7 @@
 
 ## 技术架构
 
-MarkLight 现在采用明确的三层边界：
+MarkdownEd 现在采用明确的三层边界：
 
 - Vue 3 + Pinia + TipTap：负责 UI、编辑器体验和命令分发
 - Tauri 2：负责插件、权限边界和命令/事件桥接
@@ -100,4 +100,4 @@ cargo check --manifest-path src-tauri/Cargo.toml
 
 ## License
 
-MarkLight 基于 [Apache License 2.0](LICENSE) 开源。
+MarkdownEd 基于 [Apache License 2.0](LICENSE) 开源。

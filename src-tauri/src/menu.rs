@@ -47,13 +47,13 @@ fn build_menu(
 
     let app_menu = Submenu::with_items(
         app,
-        "MarkLight",
+        "MarkdownEd",
         true,
         &[
             &MenuItem::with_id(
                 app,
                 "help.about",
-                "关于 MarkLight",
+                "关于 MarkdownEd",
                 true,
                 about_accel.as_deref(),
             )?,
@@ -68,7 +68,7 @@ fn build_menu(
             &PredefinedMenuItem::separator(app)?,
             &PredefinedMenuItem::services(app, Some("服务"))?,
             &PredefinedMenuItem::separator(app)?,
-            &MenuItem::with_id(app, "app.hide", "隐藏 MarkLight", true, Some("CmdOrCtrl+H"))?,
+            &MenuItem::with_id(app, "app.hide", "隐藏 MarkdownEd", true, Some("CmdOrCtrl+H"))?,
             &MenuItem::with_id(
                 app,
                 "app.hideOthers",
@@ -81,7 +81,7 @@ fn build_menu(
             &MenuItem::with_id(
                 app,
                 "app.quit",
-                "退出 MarkLight",
+                "退出 MarkdownEd",
                 true,
                 quit_accel.as_deref(),
             )?,

@@ -1,6 +1,6 @@
 # Semantic Editor Model
 
-This branch moves MarkLight toward a semantic ProseMirror document model.
+This branch moves MarkdownEd toward a semantic ProseMirror document model.
 
 ## Core Invariant
 

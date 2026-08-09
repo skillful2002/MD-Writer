@@ -1,10 +1,10 @@
-# MarkLight Architecture
+# MarkdownEd Architecture
 
 更新时间：2026-06-11
 
 ## 1. 系统目标与设计原则
 
-MarkLight 是一个本地优先的 Markdown 编辑器桌面应用。系统目标不是把 Web 应用“塞进壳里”，而是围绕桌面编辑器的核心语义建立明确分层：
+MarkdownEd 是一个本地优先的 Markdown 编辑器桌面应用。系统目标不是把 Web 应用“塞进壳里”，而是围绕桌面编辑器的核心语义建立明确分层：
 
 - Rust 负责领域状态、一致性、原生能力编排和跨窗口运行时。
 - Tauri 负责插件、权限边界、窗口与事件通道。

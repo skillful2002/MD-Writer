@@ -1,14 +1,14 @@
-# MarkLight - Apache 2.0 License
+# MarkdownEd - Apache 2.0 License
 
-**Copyright © 2026 MarkLight Team**
+**Copyright © 2026 MarkdownEd Team**
 
 ---
 
 ## 📜 许可说明 / License
 
-MarkLight 采用 **Apache License 2.0** 开源。
+MarkdownEd 采用 **Apache License 2.0** 开源。
 
-MarkLight is licensed under the **Apache License 2.0**.
+MarkdownEd is licensed under the **Apache License 2.0**.
 
 ---
 
@@ -23,7 +23,7 @@ MarkLight is licensed under the **Apache License 2.0**.
 
 ## ⚠️ 限制 / Limitations
 
-- ❌ **商标使用** - 不能使用 MarkLight 商标
+- ❌ **商标使用** - 不能使用 MarkdownEd 商标
 - ℹ️ **保留声明** - 保留版权和许可声明
 
 ---

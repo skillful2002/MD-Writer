@@ -137,7 +137,7 @@ const windowSession = useAppWindowSession({
 
 function showAbout() {
   message(
-    `墨光 (MarkLight) v${appVersion}\n\n一款高性能、自研内核的 Markdown 编辑器\n\nGitHub: https://github.com/xiaodou997/marklight\nGitee: https://gitee.com/xiaodou997/marklight\n\n© 2026 luoxiaodou`,
+    `纽新 (MarkdownEd) v${appVersion}\n\n一款高性能、自研内核的 Markdown 编辑器\n\nGitHub: https://github.com/skillful2002/MarkdownEd\nGitee: https://gitee.com/liuzhengguo/MarkdownEd\n\n© 2026 newxin.tech`,
     {
       title: '关于',
       kind: 'info',
