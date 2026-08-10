@@ -2,10 +2,14 @@
  * 图片扩展
  *
  * 支持本地路径、网络 URL、data URI。
- * Tauri 环境下的 asset:// 协议路径会自动转换。
+ * - 网络 URL 通过 fetch 转换为 data URI 显示。
+ * - 本地路径（绝对或相对文档目录）解析为绝对路径、授权 asset 作用域后
+ *   转换为 asset:// 协议地址显示（Tauri 环境下）。
+ * - data URI 直接使用。
  */
 import Image from '@tiptap/extension-image';
 import type { Node as PMNode } from '@tiptap/pm/model';
+import { useFileStore } from '../../../../stores/file';
 
 export interface ImageMarkdownAttrs {
   src: string;
@@ -70,6 +74,18 @@ let remoteImageFetcher: RemoteImageFetcher | null = null;
 
 function isRemoteImageSrc(src: string): boolean {
   return /^https?:\/\//i.test(src);
+}
+
+function isDataUri(src: string): boolean {
+  return /^data:/i.test(src);
+}
+
+/**
+ * 是否为需要走本地文件解析的图片源：
+ * 非网络 URL、非 data URI 的本地文件（绝对路径或相对文档目录的路径）。
+ */
+function isLocalImageSrc(src: string): boolean {
+  return !!src && !isRemoteImageSrc(src) && !isDataUri(src);
 }
 
 function touchRemoteImageCacheEntry(src: string, entry: RemoteImageCacheEntry) {
@@ -176,6 +192,111 @@ export function __resetRemoteImageCacheForTests() {
   remoteImageFetcher = null;
 }
 
+/**
+ * 本地图片源解析：将文档中书写的本地路径（相对或绝对）转换为可在
+ * Tauri webview 中加载的 asset:// 地址。
+ *
+ * 流程：
+ *   1. 相对路径基于当前文档目录解析为绝对路径（resolveDocumentImagePath）。
+ *   2. 向 asset 协议作用域授权该文件（authorizeImageAsset）。
+ *   3. 转换为 asset:// 地址（toAssetUrl）。
+ *
+ * 任何一步失败（如文件不存在、非 Tauri 环境）都回退为原始 src，
+ * 避免抛出导致编辑器崩溃。
+ */
+type LocalImageResolver = (src: string, docPath: string) => Promise<string>;
+type LocalImageCacheEntry =
+  | { status: 'fulfilled'; value: string }
+  | { status: 'pending'; promise: Promise<string> }
+  | { status: 'failed'; expiresAt: number };
+
+const MAX_LOCAL_IMAGE_CACHE_ENTRIES = 200;
+const localImageCache = new Map<string, LocalImageCacheEntry>();
+let localImageResolver: LocalImageResolver | null = null;
+
+function getLocalImageResolver(): LocalImageResolver {
+  localImageResolver ??= async (src: string, docPath: string) => {
+    const { resolveDocumentImagePath, authorizeImageAsset }
+      = await import('../../../../services/tauri/document');
+    const { toAssetUrl } = await import('../../../../services/tauri/asset');
+    const { absolutePath } = await resolveDocumentImagePath(docPath, src);
+    const authorized = await authorizeImageAsset(absolutePath);
+    return toAssetUrl(authorized.path);
+  };
+  return localImageResolver;
+}
+
+function trimLocalImageCache() {
+  while (localImageCache.size > MAX_LOCAL_IMAGE_CACHE_ENTRIES) {
+    let removableKey: string | null = null;
+    for (const [src, entry] of localImageCache) {
+      if (entry.status !== 'pending') {
+        removableKey = src;
+        break;
+      }
+    }
+    if (!removableKey) {
+      break;
+    }
+    localImageCache.delete(removableKey);
+  }
+}
+
+export async function getLocalImageDisplaySrc(
+  src: string,
+  docPath: string | null,
+): Promise<string> {
+  if (!isLocalImageSrc(src)) {
+    return src;
+  }
+  if (!docPath) {
+    return src;
+  }
+
+  const cacheKey = `${docPath}::${src}`;
+  const now = Date.now();
+  const cached = localImageCache.get(cacheKey);
+  if (cached) {
+    if (cached.status === 'fulfilled') {
+      return cached.value;
+    }
+    if (cached.status === 'pending') {
+      return cached.promise;
+    }
+    if (cached.expiresAt > now) {
+      return src;
+    }
+    localImageCache.delete(cacheKey);
+  }
+
+  const promise = getLocalImageResolver()(src, docPath)
+    .then((displaySrc) => {
+      localImageCache.set(cacheKey, { status: 'fulfilled', value: displaySrc });
+      trimLocalImageCache();
+      return displaySrc;
+    })
+    .catch(() => {
+      localImageCache.set(cacheKey, {
+        status: 'failed',
+        expiresAt: Date.now() + REMOTE_IMAGE_FAILURE_TTL_MS,
+      });
+      trimLocalImageCache();
+      return src;
+    });
+
+  localImageCache.set(cacheKey, { status: 'pending', promise });
+  return promise;
+}
+
+export function __setLocalImageResolverForTests(resolver: LocalImageResolver | null) {
+  localImageResolver = resolver;
+}
+
+export function __resetLocalImageCacheForTests() {
+  localImageCache.clear();
+  localImageResolver = null;
+}
+
 export const CustomImage = Image.extend({
   addNodeView() {
     return ({ node, getPos, editor }) => {
@@ -226,6 +347,14 @@ export const CustomImage = Image.extend({
               if (image.src !== displaySrc) {
                 image.src = displaySrc;
               }
+            }
+          });
+        } else if (isLocalImageSrc(attrs.src)) {
+          const requestId = ++displayRequestId;
+          const docPath = useFileStore().currentFile.path;
+          void getLocalImageDisplaySrc(attrs.src, docPath).then((displaySrc) => {
+            if (requestId === displayRequestId && image.src !== displaySrc) {
+              image.src = displaySrc;
             }
           });
         }
