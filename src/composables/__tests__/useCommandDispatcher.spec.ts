@@ -12,6 +12,11 @@ vi.mock('../../services/tauri/window', () => ({
 }));
 
 function createDispatcher() {
+  const activeViewMode = ref<'editor' | 'image'>('editor');
+  const isSourceMode = ref(false);
+  const isSidebarOpen = ref(false);
+  const isOutlineOpen = ref(false);
+
   const editorExecute = vi.fn();
   const hasFocus = vi.fn(() => true);
   const openSearch = vi.fn();
@@ -24,7 +29,12 @@ function createDispatcher() {
   const exportHtml = vi.fn();
   const exportPdf = vi.fn();
   const copyToWechat = vi.fn();
-  const toggleSidebar = vi.fn();
+  const toggleSidebar = vi.fn(() => {
+    isSidebarOpen.value = !isSidebarOpen.value;
+  });
+  const toggleOutline = vi.fn(() => {
+    isOutlineOpen.value = !isOutlineOpen.value;
+  });
   const toggleSourceMode = vi.fn();
   const openSettings = vi.fn();
   const openCommandPalette = vi.fn();
@@ -34,10 +44,6 @@ function createDispatcher() {
   const toggleFullscreen = vi.fn();
   const handleQuit = vi.fn();
 
-  const activeViewMode = ref<'editor' | 'image'>('editor');
-  const isSourceMode = ref(false);
-  const isSidebarOpen = ref(false);
-  const sidebarMode = ref<'outline' | 'files'>('outline');
 
   const dispatcher = useCommandDispatcher({
     editorRef: ref({
@@ -48,7 +54,6 @@ function createDispatcher() {
     activeViewMode,
     isSourceMode,
     isSidebarOpen,
-    sidebarMode,
     handleNew,
     handleOpen,
     handleOpenFolder,
@@ -59,6 +64,7 @@ function createDispatcher() {
     exportPdf,
     copyToWechat,
     toggleSidebar,
+    toggleOutline,
     toggleSourceMode,
     openSettings,
     openCommandPalette,
@@ -85,6 +91,7 @@ function createDispatcher() {
       exportPdf,
       copyToWechat,
       toggleSidebar,
+      toggleOutline,
       toggleSourceMode,
       openSettings,
       openCommandPalette,
@@ -98,7 +105,7 @@ function createDispatcher() {
       activeViewMode,
       isSourceMode,
       isSidebarOpen,
-      sidebarMode,
+      isOutlineOpen,
     },
   };
 }
@@ -127,12 +134,14 @@ describe('useCommandDispatcher', () => {
     expect(spies.editorExecute).toHaveBeenCalledWith('editor.bold');
   });
 
-  it('switches sidebar mode through shared app command path', async () => {
+  it('toggles sidebar and outline panels through shared app command path', async () => {
     const { dispatcher, state } = createDispatcher();
 
-    await expect(dispatcher.executeCommand('view.showFiles', 'palette')).resolves.toBe(true);
-    expect(state.sidebarMode.value).toBe('files');
+    await expect(dispatcher.executeCommand('view.toggleSidebar', 'palette')).resolves.toBe(true);
     expect(state.isSidebarOpen.value).toBe(true);
+
+    await expect(dispatcher.executeCommand('view.showOutline', 'palette')).resolves.toBe(true);
+    expect(state.isOutlineOpen.value).toBe(true);
   });
 
   it('handles every registered app command', async () => {

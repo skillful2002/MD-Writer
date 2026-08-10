@@ -22,6 +22,7 @@ import StatusBar from './components/Layout/StatusBar.vue';
 import TitleBar from './components/Layout/TitleBar.vue';
 import SettingsModal from './components/Settings/SettingsModal.vue';
 import EditorToolbar from './components/Toolbar/EditorToolbar.vue';
+import SidebarOutlinePanel from './components/Editor/SidebarOutlinePanel.vue';
 import { useFileStore } from './stores/file';
 import { useSettingsStore } from './stores/settings';
 import { message } from './services/tauri/dialog';
@@ -88,12 +89,13 @@ const { syncMenuShortcuts, stopWatching: stopWatchingMenuShortcuts } = useMenuSh
 
 const {
   isSidebarOpen,
+  isOutlineOpen,
   isSourceMode,
-  sidebarMode,
   imagePasteWarning,
   isCommandPaletteOpen,
   isShortcutsModalOpen,
   toggleSidebar,
+  toggleOutline,
   toggleSourceMode,
   openCommandPalette,
   openShortcutsModal,
@@ -103,7 +105,7 @@ const {
 async function handleOpenFolder() {
   const opened = await workspaceSession.openWorkspacePicker();
   if (opened) {
-    sidebarMode.value = 'files';
+    isSidebarOpen.value = true;
   }
 }
 
@@ -150,7 +152,6 @@ const { executeCommand } = useCommandDispatcher({
   activeViewMode,
   isSourceMode,
   isSidebarOpen,
-  sidebarMode,
   handleNew: documentSession.handleNewDocument,
   handleOpen: documentSession.handleOpenDocument,
   handleOpenFolder,
@@ -166,6 +167,7 @@ const { executeCommand } = useCommandDispatcher({
   openCommandPalette,
   openShortcuts: openShortcutsModal,
   toggleFocusMode: () => settingsStore.toggleFocusMode(),
+  toggleOutline,
   showAbout,
   toggleFullscreen: windowSession.toggleFullscreen,
   handleQuit: windowSession.handleQuit,
@@ -244,13 +246,10 @@ onUnmounted(() => {
         class="w-64 flex-shrink-0 transition-all duration-300"
       >
         <Sidebar
-          v-model:mode="sidebarMode"
-          :outline-items="outlineItems"
           :tree-nodes="treeNodes"
           :root-folder="rootFolder"
           :current-file-path="fileStore.currentFile.path"
           :pending-rename-path="pendingRenamePath"
-          @scroll-to="scrollToHeading"
           @open-folder="handleOpenFolder"
           @open-file="handleOpenFile"
           @open-image="handleOpenImage"
@@ -289,6 +288,23 @@ onUnmounted(() => {
           @update-content="fileStore.setContent"
         />
       </main>
+
+      <aside
+        v-show="isOutlineOpen && !isSourceMode && !settingsStore.isFocusMode"
+        class="w-64 flex-shrink-0 flex flex-col border-l transition-all duration-300"
+        style="background-color: var(--sidebar-bg); border-color: var(--border-color)"
+      >
+        <div
+          class="flex-shrink-0 px-4 py-2 text-xs font-semibold border-b"
+          style="border-color: var(--border-color); color: var(--text-color)"
+        >
+          大纲
+        </div>
+        <SidebarOutlinePanel
+          :items="outlineItems"
+          @scroll-to="scrollToHeading"
+        />
+      </aside>
     </div>
 
     <div

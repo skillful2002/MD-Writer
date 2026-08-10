@@ -1,7 +1,9 @@
 import { reactive, ref } from 'vue';
 import type { Node as PMNode } from '@tiptap/pm/model';
 import type { EditorView } from '@tiptap/pm/view';
-import type { OutlineItem } from '../components/Editor/Sidebar.vue';
+import type { SidebarOutlineItem } from '../components/Editor/SidebarOutlinePanel.vue';
+
+export type OutlineItem = SidebarOutlineItem;
 
 export type AppEditorExpose = {
   scrollToPos: (pos: number) => void;

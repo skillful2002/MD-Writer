@@ -3,41 +3,7 @@
     class="sidebar-container h-full flex flex-col select-none border-r"
     style="background-color: var(--sidebar-bg); border-color: var(--border-color)"
   >
-    <!-- 标签切换 -->
-    <div class="flex border-b" style="border-color: var(--border-color)">
-      <button
-        class="flex-1 py-2 text-xs font-medium transition-colors"
-        :class="
-          mode === 'outline'
-            ? 'text-blue-600 border-b-2 border-blue-600'
-            : 'text-gray-500 hover:text-gray-700'
-        "
-        @click="$emit('update:mode', 'outline')"
-      >
-        大纲
-      </button>
-      <button
-        class="flex-1 py-2 text-xs font-medium transition-colors"
-        :class="
-          mode === 'files'
-            ? 'text-blue-600 border-b-2 border-blue-600'
-            : 'text-gray-500 hover:text-gray-700'
-        "
-        @click="$emit('update:mode', 'files')"
-      >
-        文件
-      </button>
-    </div>
-
-    <!-- 大纲模式 -->
-    <SidebarOutlinePanel
-      v-if="mode === 'outline'"
-      :items="outlineItems"
-      @scroll-to="$emit('scroll-to', $event)"
-    />
-
     <SidebarFilesPanel
-      v-else
       :root-folder="rootFolder"
       :root-folder-name="rootFolderName"
       :search-query="searchQuery"
@@ -81,13 +47,8 @@ import { confirm } from '../../services/tauri/dialog';
 import SidebarFileDialogs from './SidebarFileDialogs.vue';
 import SidebarFilesPanel from './SidebarFilesPanel.vue';
 import SidebarMenus from './SidebarMenus.vue';
-import SidebarOutlinePanel, { type SidebarOutlineItem } from './SidebarOutlinePanel.vue';
-
-export type OutlineItem = SidebarOutlineItem;
 
 const props = defineProps<{
-  mode: 'outline' | 'files';
-  outlineItems: OutlineItem[];
   treeNodes: TreeNode[];
   rootFolder: string | null;
   currentFilePath: string | null;
@@ -95,8 +56,6 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'update:mode', mode: 'outline' | 'files'): void;
-  (e: 'scroll-to', pos: number): void;
   (e: 'open-folder'): void;
   (e: 'open-file', path: string): void;
   (e: 'open-image', path: string): void;

@@ -379,7 +379,7 @@ export const COMMANDS: CommandDefinition[] = [
   {
     id: 'view.showOutline',
     title: '显示大纲',
-    description: '切换到侧边栏大纲',
+    description: '显示或隐藏右侧大纲面板',
     icon: '📑',
     scope: 'app',
     group: 'view',

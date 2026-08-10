@@ -4,7 +4,6 @@ import { getCommand } from '../commands/registry';
 import { openUrl } from '../services/tauri/opener';
 import { revealStartupOpenLog } from '../services/tauri/window';
 
-type SidebarMode = 'outline' | 'files';
 type ViewMode = 'editor' | 'image';
 
 export interface EditorCommandApi {
@@ -18,7 +17,6 @@ export interface CommandDispatcherOptions {
   activeViewMode: Ref<ViewMode>;
   isSourceMode: Ref<boolean>;
   isSidebarOpen: Ref<boolean>;
-  sidebarMode: Ref<SidebarMode>;
   handleNew: () => void | Promise<void>;
   handleOpen: () => void | Promise<void>;
   handleOpenFolder: () => void | Promise<void>;
@@ -29,6 +27,7 @@ export interface CommandDispatcherOptions {
   exportPdf: () => void | Promise<void>;
   copyToWechat: () => void | Promise<void>;
   toggleSidebar: () => void;
+  toggleOutline: () => void;
   toggleSourceMode: () => void;
   openSettings: () => void;
   openCommandPalette: () => void;
@@ -45,7 +44,6 @@ export function useCommandDispatcher(options: CommandDispatcherOptions) {
     activeViewMode,
     isSourceMode,
     isSidebarOpen,
-    sidebarMode,
   } = options;
 
   function canRunEditorShortcut() {
@@ -115,11 +113,9 @@ export function useCommandDispatcher(options: CommandDispatcherOptions) {
         options.toggleSidebar();
         return true;
       case 'view.showOutline':
-        sidebarMode.value = 'outline';
-        isSidebarOpen.value = true;
+        options.toggleOutline();
         return true;
       case 'view.showFiles':
-        sidebarMode.value = 'files';
         isSidebarOpen.value = true;
         return true;
       case 'view.toggleSourceMode':
