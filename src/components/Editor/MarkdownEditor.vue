@@ -47,7 +47,7 @@ import {
   getEditorWordCount,
   type EditorOutlineItem,
 } from './tiptap/editor-metadata';
-import { setupEditorImageDrop } from './tiptap/editor-image-drop';
+import { handleEditorImageDrop, isEditorImageDragOver } from './tiptap/editor-image-drop';
 import { handleEditorImagePaste, isPastedImage } from './tiptap/editor-image-paste';
 import { useEditorAppearance } from './tiptap/useEditorAppearance';
 import { useEditorSearch } from './tiptap/useEditorSearch';
@@ -135,6 +135,7 @@ function createEditor(content: string) {
   // 同步基线：setContent + appendTransaction 完成后，序列化结果作为 store 基准
   // 避免 parser/serializer round-trip 差异导致误判 dirty
   const baseline = serializeMarkdown(e.state.doc);
+
   fileStore.setContent(baseline);
 }
 
@@ -204,31 +205,48 @@ function handleContainerClick(event: MouseEvent) {
 }
 
 // ── 图片拖拽上传 ──────────────────────────────────────────────
+// 拖放监听挂在编辑区整个包裹层（含内容下方空白）上，而不是 ProseMirror 的内容
+// DOM，这样无论是否先点过编辑器、拖到哪个位置都能接收图片：
+//   - 文件树图片拖入 —— 引用已有文件，写入相对路径，不复制到 .images/；
+//   - OS 文件拖入 —— 读取图片字节落盘到文档同级 .images/，插入相对路径。
+// 非图片拖拽（如编辑器内文本拖动）不拦截，交由 ProseMirror 默认逻辑处理。
 
-let unlistenDragDrop: (() => void) | null = null;
+function onEditorDragOver(event: DragEvent) {
+  if (isEditorImageDragOver(event)) {
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
+  }
+}
 
-async function setupDragDrop() {
-  unlistenDragDrop = await setupEditorImageDrop({
-    editor,
-    getDocumentPath: () => fileStore.currentFile.path,
-  });
+function onEditorDrop(event: DragEvent) {
+  const view = editor.value?.view;
+  if (!view || !isEditorImageDragOver(event)) return;
+  // 按鼠标放开位置插入，并阻止 ProseMirror 默认处理，避免重复插入
+  handleEditorImageDrop(view, event);
+  event.stopPropagation();
 }
 
 // ── 生命周期 ──────────────────────────────────────────────────
 
 onMounted(() => {
   createEditor(props.initialContent || '');
-  setupDragDrop();
+  const wrap = editorWrapRef.value;
+  if (wrap) {
+    // 捕获阶段监听，先于 ProseMirror 内层监听处理图片拖放
+    wrap.addEventListener('dragover', onEditorDragOver, true);
+    wrap.addEventListener('drop', onEditorDrop, true);
+  }
 });
 
 onBeforeUnmount(() => {
+  const wrap = editorWrapRef.value;
+  if (wrap) {
+    wrap.removeEventListener('dragover', onEditorDragOver, true);
+    wrap.removeEventListener('drop', onEditorDrop, true);
+  }
   debouncedUpdate.cancel();
   editor.value?.destroy();
   editor.value = null;
-  if (unlistenDragDrop) {
-    unlistenDragDrop();
-    unlistenDragDrop = null;
-  }
 });
 
 // ── Expose ────────────────────────────────────────────────────

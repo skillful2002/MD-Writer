@@ -23,7 +23,7 @@
         "shadow": true,
         "titleBarStyle": "Transparent",
         "hiddenTitle": false,
-        "dragDropEnabled": true
+        "dragDropEnabled": false
       }
     ],
     "security": {

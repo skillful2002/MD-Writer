@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { TreeNode } from '../../composables/useWorkspaceSession';
+import { setTreeImageDragData, clearTreeImageDragData } from './tiptap/editor-image-tree-drop';
 
 const props = withDefaults(
   defineProps<{
@@ -38,6 +39,16 @@ const icon = computed(() => {
   if (props.node.is_image) return '🖼️';
   return '📄';
 });
+
+function handleDragStart(event: DragEvent) {
+  if (props.node.is_image) {
+    setTreeImageDragData(event, props.node.path);
+  }
+}
+
+function handleDragEnd() {
+  clearTreeImageDragData();
+}
 </script>
 
 <template>
@@ -45,8 +56,11 @@ const icon = computed(() => {
     class="flex items-center py-1 pr-2 text-sm cursor-pointer transition-colors"
     :class="rowClasses"
     :style="rowStyle"
+    :draggable="node.is_image"
     @click="emit('select', node, $event)"
     @contextmenu.prevent="emit('context-menu', $event, node)"
+    @dragstart="handleDragStart"
+    @dragend="handleDragEnd"
   >
     <span
       v-if="showToggle"

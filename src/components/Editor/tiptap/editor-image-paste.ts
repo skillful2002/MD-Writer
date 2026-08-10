@@ -49,7 +49,7 @@ function findPastedImage(clipboard: DataTransfer): File | null {
   return null;
 }
 
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
+export function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
   let binary = '';
   const chunkSize = 0x8000;
@@ -62,7 +62,7 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return btoa(binary);
 }
 
-function emitImagePasteWarning(message: string) {
+export function emitImagePasteWarning(message: string) {
   window.dispatchEvent(new CustomEvent('image-paste-warning', { detail: message }));
 }
 
