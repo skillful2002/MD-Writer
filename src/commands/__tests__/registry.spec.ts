@@ -31,8 +31,8 @@ describe('command registry', () => {
   });
 
   it('builds tauri menu accelerators from effective shortcuts', () => {
-    const shortcuts = getMenuShortcuts({ 'view.showFiles': 'Mod-Shift-2' });
-    expect(shortcuts['view.showFiles']).toBe('CmdOrCtrl+Shift+2');
+    const shortcuts = getMenuShortcuts({ 'view.showOutline': 'Mod-Alt-1' });
+    expect(shortcuts['view.showOutline']).toBe('CmdOrCtrl+Alt+1');
     expect(shortcuts['file.save']).toBe('CmdOrCtrl+S');
   });
 

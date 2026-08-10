@@ -25,14 +25,14 @@ describe('useMenuShortcutsSync', () => {
 
     customShortcuts.value = {
       'file.save': 'Mod-Alt-s',
-      'view.showFiles': 'Mod-Shift-2',
+      'view.showOutline': 'Mod-Shift-2',
     };
     await nextTick();
 
     expect(refreshNativeMenuShortcutsMock).toHaveBeenCalledWith(
       expect.objectContaining({
         'file.save': 'CmdOrCtrl+Alt+S',
-        'view.showFiles': 'CmdOrCtrl+Shift+2',
+        'view.showOutline': 'CmdOrCtrl+Shift+2',
       }),
     );
 

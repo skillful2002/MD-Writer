@@ -38,7 +38,6 @@ fn build_menu(
 
     let toggle_sidebar_accel = accelerator(shortcuts, "view.toggleSidebar", Some("CmdOrCtrl+\\"));
     let show_outline_accel = accelerator(shortcuts, "view.showOutline", Some("CmdOrCtrl+Alt+1"));
-    let show_files_accel = accelerator(shortcuts, "view.showFiles", Some("CmdOrCtrl+Alt+2"));
     let toggle_source_accel = accelerator(shortcuts, "view.toggleSourceMode", Some("CmdOrCtrl+/"));
     let focus_mode_accel = accelerator(shortcuts, "view.focusMode", Some("CmdOrCtrl+Shift+F"));
     let fullscreen_accel = accelerator(shortcuts, "view.fullscreen", Some("CmdOrCtrl+Ctrl+F"));
@@ -168,27 +167,19 @@ fn build_menu(
         "视图",
         true,
         &[
-            &CheckMenuItem::with_id(
-                app,
-                "view.toggleSidebar",
-                "侧边栏",
-                true,
-                true,
-                toggle_sidebar_accel.as_deref(),
-            )?,
             &MenuItem::with_id(
                 app,
                 "view.showOutline",
-                "  └ 大纲",
+                "大纲",
                 true,
                 show_outline_accel.as_deref(),
             )?,
             &MenuItem::with_id(
                 app,
-                "view.showFiles",
-                "  └ 文件树",
+                "view.toggleSidebar",
+                "文件树",
                 true,
-                show_files_accel.as_deref(),
+                toggle_sidebar_accel.as_deref(),
             )?,
             &PredefinedMenuItem::separator(app)?,
             &CheckMenuItem::with_id(

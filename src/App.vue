@@ -151,7 +151,6 @@ const { executeCommand } = useCommandDispatcher({
   editorRef,
   activeViewMode,
   isSourceMode,
-  isSidebarOpen,
   handleNew: documentSession.handleNewDocument,
   handleOpen: documentSession.handleOpenDocument,
   handleOpenFolder,

@@ -53,7 +53,6 @@ function createDispatcher() {
     }),
     activeViewMode,
     isSourceMode,
-    isSidebarOpen,
     handleNew,
     handleOpen,
     handleOpenFolder,

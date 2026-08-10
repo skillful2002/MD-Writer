@@ -16,7 +16,6 @@ export interface CommandDispatcherOptions {
   editorRef: Ref<EditorCommandApi | null>;
   activeViewMode: Ref<ViewMode>;
   isSourceMode: Ref<boolean>;
-  isSidebarOpen: Ref<boolean>;
   handleNew: () => void | Promise<void>;
   handleOpen: () => void | Promise<void>;
   handleOpenFolder: () => void | Promise<void>;
@@ -43,7 +42,6 @@ export function useCommandDispatcher(options: CommandDispatcherOptions) {
     editorRef,
     activeViewMode,
     isSourceMode,
-    isSidebarOpen,
   } = options;
 
   function canRunEditorShortcut() {
@@ -114,9 +112,6 @@ export function useCommandDispatcher(options: CommandDispatcherOptions) {
         return true;
       case 'view.showOutline':
         options.toggleOutline();
-        return true;
-      case 'view.showFiles':
-        isSidebarOpen.value = true;
         return true;
       case 'view.toggleSourceMode':
         options.toggleSourceMode();
