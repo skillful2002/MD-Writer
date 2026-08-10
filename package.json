@@ -16,7 +16,8 @@
     "test": "vitest run",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
-    "format": "prettier --write \"src/**/*.{ts,vue,css}\""
+    "format": "prettier --write \"src/**/*.{ts,vue,css}\"",
+    "pack:mac": "bash scripts/pack-macos-dmg.sh"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.11.0",
