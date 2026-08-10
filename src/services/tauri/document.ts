@@ -49,6 +49,18 @@ export async function importDocumentImage(sourcePath: string, documentPath: stri
   });
 }
 
+export async function saveDocumentImage(
+  documentPath: string,
+  fileName: string,
+  base64Data: string,
+) {
+  return invokeCommand<DocumentImageImportResult>(TAURI_COMMANDS.saveDocumentImage, {
+    documentPath,
+    fileName,
+    data: base64Data,
+  });
+}
+
 export async function resolveDocumentImagePath(documentPath: string, relativePath: string) {
   return invokeCommand<DocumentImageResolveResult>(TAURI_COMMANDS.resolveDocumentImagePath, {
     documentPath,

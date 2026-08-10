@@ -48,6 +48,7 @@ import {
   type EditorOutlineItem,
 } from './tiptap/editor-metadata';
 import { setupEditorImageDrop } from './tiptap/editor-image-drop';
+import { handleEditorImagePaste, isPastedImage } from './tiptap/editor-image-paste';
 import { useEditorAppearance } from './tiptap/useEditorAppearance';
 import { useEditorSearch } from './tiptap/useEditorSearch';
 import BubbleMenuComponent from './views/BubbleMenu.vue';
@@ -107,6 +108,11 @@ function createEditor(content: string) {
     editorProps: {
       attributes: {
         class: 'tiptap-editor',
+      },
+      handlePaste: (view, event) => {
+        if (!isPastedImage(event)) return false;
+        void handleEditorImagePaste(view, event);
+        return true;
       },
     },
     onUpdate: ({ editor: ed }) => {

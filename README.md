@@ -33,7 +33,7 @@
 ## Highlights
 
 - WYSIWYG editing: powered by TipTap / ProseMirror, with editable rendered blocks for code, tables, math, Mermaid diagrams, callouts, and more.
-- Local-first workflow: documents, images, and workspaces stay on your machine. Dropped images are saved into an `assets/` folder next to the current document.
+- Local-first workflow: documents, images, and workspaces stay on your machine. Dropped images are saved into a `.images/` folder next to the current document.
 - Desktop-native experience: multi-window editing, persisted window state, native menus, and system printing.
 - Structured workspaces: Rust handles directory filtering, watcher aggregation, external change events, and save-conflict detection.
 - WeChat and HTML export: the frontend renders export-ready content while the native layer handles printing and file writes.

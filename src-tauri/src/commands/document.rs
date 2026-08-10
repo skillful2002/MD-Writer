@@ -3,6 +3,7 @@ use crate::models::{
     DocumentImageImportResult, DocumentImageResolveResult, DocumentOpenResult, DocumentSaveResult,
     ImageAssetAuthorizationResult,
 };
+use base64::Engine;
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -66,17 +67,44 @@ pub fn import_document_image(
     let document_dir = Path::new(&document_path)
         .parent()
         .ok_or_else(|| AppError::validation("无法获取文档目录"))?;
-    let assets_dir = document_dir.join("assets");
-    if !assets_dir.exists() {
-        fs::create_dir_all(&assets_dir)?;
+    let data = fs::read(&source)?;
+    save_image_bytes(document_dir, filename, &data)
+}
+
+/// 把已存在于磁盘的图片源（拖拽导入）和剪贴板粘贴的图片字节统一落盘到
+/// 文档所在目录下的 `.images/` 文件夹，文件名自动去重，返回相对文档目录的相对路径。
+fn save_image_bytes(
+    document_dir: &Path,
+    file_name: &str,
+    data: &[u8],
+) -> Result<DocumentImageImportResult, AppError> {
+    let images_dir = document_dir.join(".images");
+    if !images_dir.exists() {
+        fs::create_dir_all(&images_dir)?;
     }
 
-    let (target_path, target_filename) = unique_asset_target(&assets_dir, filename);
-    fs::copy(source, &target_path)?;
+    let (target_path, target_filename) = unique_image_target(&images_dir, file_name);
+    atomic_write(&target_path, data)?;
 
     Ok(DocumentImageImportResult {
-        relative_path: format!("assets/{}", target_filename),
+        relative_path: format!(".images/{}", target_filename),
     })
+}
+
+/// 将粘贴到剪贴板中的图片（前端已转为 base64）写入文档所在目录下的 `.images/` 文件夹。
+#[tauri::command]
+pub fn save_document_image(
+    document_path: String,
+    file_name: String,
+    data: String,
+) -> Result<DocumentImageImportResult, AppError> {
+    let document_dir = Path::new(&document_path)
+        .parent()
+        .ok_or_else(|| AppError::validation("无法获取文档目录"))?;
+    let bytes = base64::engine::general_purpose::STANDARD
+        .decode(&data)
+        .map_err(|error| AppError::validation(format!("图片数据解码失败：{error}")))?;
+    save_image_bytes(document_dir, &file_name, &bytes)
 }
 
 #[tauri::command]
@@ -174,7 +202,7 @@ fn temp_path(path: &Path) -> PathBuf {
     path.with_file_name(format!(".{}.{}.tmp", file_name, millis))
 }
 
-fn unique_asset_target(assets_dir: &Path, filename: &str) -> (PathBuf, String) {
+fn unique_image_target(images_dir: &Path, filename: &str) -> (PathBuf, String) {
     let original = Path::new(filename);
     let stem = original
         .file_stem()
@@ -191,7 +219,7 @@ fn unique_asset_target(assets_dir: &Path, filename: &str) -> (PathBuf, String) {
         } else {
             format!("{stem}-{suffix}")
         };
-        let candidate_path = assets_dir.join(&candidate_name);
+        let candidate_path = images_dir.join(&candidate_name);
         if !candidate_path.exists() {
             return (candidate_path, candidate_name);
         }
@@ -203,10 +231,11 @@ fn unique_asset_target(assets_dir: &Path, filename: &str) -> (PathBuf, String) {
 #[cfg(test)]
 mod tests {
     use super::{
-        atomic_write, import_document_image, open_document, save_document,
+        atomic_write, import_document_image, open_document, save_document, save_document_image,
         validate_image_asset_path,
     };
     use crate::error::AppError;
+    use base64::Engine;
     use std::fs;
     use std::path::PathBuf;
     use std::sync::atomic::{AtomicU64, Ordering};
@@ -266,15 +295,15 @@ mod tests {
     }
 
     #[test]
-    fn import_document_image_does_not_overwrite_existing_asset() {
+    fn import_document_image_does_not_overwrite_existing_image() {
         let dir = test_dir();
         let document_path = dir.join("demo.md");
         let source_dir = dir.join("source");
-        let assets_dir = dir.join("assets");
+        let images_dir = dir.join(".images");
         fs::create_dir_all(&source_dir).unwrap();
-        fs::create_dir_all(&assets_dir).unwrap();
+        fs::create_dir_all(&images_dir).unwrap();
         fs::write(&document_path, b"# demo").unwrap();
-        fs::write(assets_dir.join("cover.png"), b"existing").unwrap();
+        fs::write(images_dir.join("cover.png"), b"existing").unwrap();
         let source_path = source_dir.join("cover.png");
         fs::write(&source_path, b"new").unwrap();
 
@@ -284,9 +313,54 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(imported.relative_path, "assets/cover-1.png");
-        assert_eq!(fs::read(assets_dir.join("cover.png")).unwrap(), b"existing");
-        assert_eq!(fs::read(assets_dir.join("cover-1.png")).unwrap(), b"new");
+        assert_eq!(imported.relative_path, ".images/cover-1.png");
+        assert_eq!(fs::read(images_dir.join("cover.png")).unwrap(), b"existing");
+        assert_eq!(fs::read(images_dir.join("cover-1.png")).unwrap(), b"new");
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn save_document_image_writes_bytes_to_images() {
+        let dir = test_dir();
+        let document_path = dir.join("demo.md");
+        fs::write(&document_path, b"# demo").unwrap();
+
+        let payload = b"fake-image-bytes";
+        let encoded = base64::engine::general_purpose::STANDARD.encode(payload);
+        let saved = save_document_image(
+            document_path.to_string_lossy().to_string(),
+            "pasted.png".to_string(),
+            encoded,
+        )
+        .unwrap();
+
+        assert_eq!(saved.relative_path, ".images/pasted.png");
+        assert_eq!(
+            fs::read(dir.join(".images").join("pasted.png")).unwrap(),
+            payload
+        );
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn save_document_image_rejects_invalid_base64() {
+        let dir = test_dir();
+        let document_path = dir.join("demo.md");
+        fs::write(&document_path, b"# demo").unwrap();
+
+        let error = save_document_image(
+            document_path.to_string_lossy().to_string(),
+            "pasted.png".to_string(),
+            "not!valid!base64".to_string(),
+        )
+        .unwrap_err();
+
+        match error {
+            AppError::Validation(_) => {}
+            other => panic!("expected validation error, got {:?}", other),
+        }
 
         let _ = fs::remove_dir_all(dir);
     }
