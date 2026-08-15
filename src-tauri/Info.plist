@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- 声明 App 支持中/英本地化，让 macOS 把「编辑」菜单尾部由系统自动追加的
+       系统项（AutoFill / Start Dictation / Emoji & Symbols 等）按系统 UI 语言渲染。
+       否则 AppKit 会回退成英文。 -->
+  <key>CFBundleDevelopmentRegion</key>
+  <string>zh-Hans</string>
+  <key>CFBundleLocalizations</key>
+  <array>
+    <string>zh-Hans</string>
+    <string>en</string>
+  </array>
+</dict>
+</plist>
