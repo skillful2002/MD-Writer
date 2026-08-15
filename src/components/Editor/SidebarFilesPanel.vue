@@ -56,18 +56,33 @@ const emit = defineEmits<{
     </div>
     <template v-else>
       <div class="flex-shrink-0 px-3 py-2 border-b" style="border-color: var(--border-color)">
-        <input
-          :value="searchQuery"
-          type="text"
-          placeholder="搜索文件..."
-          class="w-full px-2 py-1 text-xs rounded focus:outline-none"
-          style="
-            background: var(--bg-color);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
-          "
-          @input="emit('update-search-query', ($event.target as HTMLInputElement).value)"
-        />
+        <div class="relative">
+          <input
+            :value="searchQuery"
+            type="text"
+            placeholder="搜索文件..."
+            class="w-full px-2 py-1 pr-7 text-xs rounded focus:outline-none"
+            style="
+              background: var(--bg-color);
+              border: 1px solid var(--border-color);
+              color: var(--text-color);
+            "
+            @input="emit('update-search-query', ($event.target as HTMLInputElement).value)"
+          />
+          <button
+            v-if="searchQuery"
+            type="button"
+            class="sidebar-search-clear absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center justify-center w-4 h-4 rounded-full"
+            title="清除搜索"
+            aria-label="清除搜索"
+            @mousedown.prevent
+            @click="emit('update-search-query', '')"
+          >
+            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div class="flex-1 overflow-y-auto py-1">
@@ -122,3 +137,13 @@ const emit = defineEmits<{
     </div>
   </div>
 </template>
+
+<style scoped>
+.sidebar-search-clear {
+  color: var(--muted-color);
+}
+
+.sidebar-search-clear:hover {
+  color: var(--text-color);
+}
+</style>
