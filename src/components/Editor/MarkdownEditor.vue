@@ -256,14 +256,42 @@ defineExpose({
     if (!editor.value) return;
     const docSize = editor.value.state.doc.content.size;
     const target = Math.max(0, Math.min(pos, docSize));
-    editor.value.commands.focus(target);
-    // 滚动到视图
-    const dom = editor.value.view.domAtPos(target);
-    if (dom.node instanceof HTMLElement) {
-      dom.node.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } else if (dom.node.parentElement) {
-      dom.node.parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    const view = editor.value.view;
+    const wrap = editorWrapRef.value;
+    if (!wrap) return;
+
+    // 计算标题末尾位置，让光标停在「行尾」而不是行首
+    const heading = editor.value.state.doc.resolve(target).nodeAfter;
+    const endPos = heading ? Math.min(target + heading.nodeSize - 1, docSize) : target;
+
+    // 1) 光标放到行尾；2) 聚焦中间编辑区。
+    // 用 view.dom.focus({ preventScroll: true }) 直接聚焦且不触发浏览器/PM 的自动滚动，
+    // 避免与下面「手动居中滚动」打架（Tiptap 的 focus 命令内部自带 rAF 滚动，会覆盖我们的居中）。
+    editor.value.commands.setTextSelection(endPos);
+    view.dom.focus({ preventScroll: true });
+
+    // 下一帧：等选区/聚焦后的布局真正稳定，再把标题滚到编辑区靠顶部位置（上方保留约 3-4 行空间）。
+    // 直接设置滚动容器 wrap.scrollTop（用正文字高计算顶部留白、并夹紧到可滚动范围），
+    // 只动编辑器容器，不会误滚外层祖先。
+    requestAnimationFrame(() => {
+      let node: HTMLElement | null = view.nodeDOM(target) as HTMLElement | null;
+      if (!(node instanceof HTMLElement)) {
+        const d = view.domAtPos(target);
+        node = d.node instanceof HTMLElement ? d.node : d.node.parentElement;
+        while (node && node !== view.dom && !/^H[1-6]$/i.test(node.tagName)) {
+          node = node.parentElement;
+        }
+      }
+      if (!(node instanceof HTMLElement) || node === view.dom) return;
+      const nodeRect = node.getBoundingClientRect();
+      const wrapRect = wrap.getBoundingClientRect();
+      const delta = nodeRect.top - wrapRect.top;
+      // 上方保留约 3-4 行：用编辑区正文字高 × 3.5 作为顶部留白
+      const lineHeight = parseFloat(getComputedStyle(view.dom).lineHeight) || nodeRect.height;
+      const topMargin = lineHeight * 3.5;
+      const maxScroll = Math.max(0, wrap.scrollHeight - wrap.clientHeight);
+      wrap.scrollTop = Math.max(0, Math.min(wrap.scrollTop + delta - topMargin, maxScroll));
+    });
   },
   getContent: () => {
     if (!editor.value) return '';

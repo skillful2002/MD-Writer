@@ -418,11 +418,11 @@ html.dark .tiptap-editor mark {
 /* ── 表格 ──────────────────────────────────────────────────── */
 .tiptap-editor .tableWrapper {
   margin: 0.8em 0;
-  border: 2px solid color-mix(in srgb, var(--border-color) 65%, var(--text-color) 35%);
+  border: 1px solid color-mix(in srgb, var(--border-color) 65%, var(--text-color) 35%);
   border-radius: 6px;
   overflow: hidden;
   background-color: var(--bg-color);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--border-color) 55%, var(--text-color) 45%);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--border-color) 30%, transparent);
 }
 
 .tiptap-editor table {
