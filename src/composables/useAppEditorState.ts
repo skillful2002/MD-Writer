@@ -13,6 +13,7 @@ export type AppEditorExpose = {
   getSelectionMarkdown?: () => string;
   getEditorView: () => EditorView | null;
   hasFocus?: () => boolean;
+  focus: () => void;
   executeCommand?: (commandId: string) => boolean;
 };
 

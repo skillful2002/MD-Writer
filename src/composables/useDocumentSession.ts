@@ -89,16 +89,18 @@ export function useDocumentSession(options: DocumentSessionOptions) {
   /**
    * 在指定目录下新建一个「未命名」Markdown 文档（内存态，不立即落盘）。
    * 首次保存（Ctrl+S）时会弹系统「另存为」对话框，defaultPath 默认定位到 targetDir。
+   * @returns 成功新建返回 true（用户取消放弃更改时返回 false）。
    */
-  async function createNewMarkdown(targetDir: string | null) {
+  async function createNewMarkdown(targetDir: string | null): Promise<boolean> {
     if (!(await confirmDiscardUnsavedChanges())) {
-      return;
+      return false;
     }
 
     clearExternalWarning();
     fileStore.reset();
     fileStore.setSuggestedDir(targetDir || null);
     options.resetViewMode();
+    return true;
   }
 
   async function handleOpenDocument() {

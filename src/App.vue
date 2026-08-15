@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent, onMounted, onUnmounted, watch } from 'vue';
+import { computed, defineAsyncComponent, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useAppWindowSession } from './composables/useAppWindowSession';
 import { useCommandDispatcher } from './composables/useCommandDispatcher';
@@ -155,11 +155,20 @@ function handleFileCreatedWrapper(name: string, isFolder: boolean, targetDir?: s
   void workspaceSession.createEntry(name, isFolder, targetDir ?? undefined);
 }
 
+/** 每次新建未命名文档自增，作为编辑器 key 的一部分，确保点击 + 时编辑器始终重挂载出全新空白文档（即使原本就处于空白态也可见）。 */
+const newDocSeq = ref(0);
+
 /** 点击侧栏 + 号：在当前打开文件所在目录新建一个未命名 Markdown 文档。 */
-function handleNewMarkdownFromSidebar() {
+async function handleNewMarkdownFromSidebar() {
   const currentPath = fileStore.currentFile.path;
   const dir = currentPath ? dirname(currentPath) : (rootFolder.value ?? null);
-  void documentSession.createNewMarkdown(dir || null);
+  const created = await documentSession.createNewMarkdown(dir || null);
+  if (created) {
+    newDocSeq.value++;
+    // 等待编辑器因 key 变化重挂载完成后聚焦，确保「新建文档」有可见的光标反馈
+    await nextTick();
+    editorRef.value?.focus();
+  }
 }
 
 const windowTitle = computed(() => {
@@ -322,7 +331,7 @@ onUnmounted(() => {
       >
         <MarkdownEditor
           v-if="activeViewMode === 'editor' && !isSourceMode"
-          :key="fileStore.currentFile.path || 'new-file'"
+          :key="fileStore.currentFile.path || ('new-' + newDocSeq)"
           ref="editorRef"
           :initial-content="fileStore.currentFile.content"
           @update="handleEditorUpdate"

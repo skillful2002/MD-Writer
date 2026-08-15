@@ -312,6 +312,9 @@ defineExpose({
   },
   getEditorView: () => editor.value?.view ?? null,
   hasFocus: () => editor.value?.isFocused ?? false,
+  focus: () => {
+    editor.value?.commands.focus('end');
+  },
   executeCommand: (commandId: string) => executeEditorCommand(editor.value, commandId),
   undo: () => editor.value?.commands.undo(),
   redo: () => editor.value?.commands.redo(),
