@@ -84,6 +84,7 @@ const {
   isSearchVisible,
   searchMatchCount,
   searchCurrentIndex,
+  isSearchNavigating,
   onSearchQuery,
   onSearchCaseSensitive,
   onSearchNext,
@@ -164,6 +165,11 @@ function emitCursorInfo(ed: TiptapEditor) {
 // ── BubbleMenu ────────────────────────────────────────────────
 
 function updateBubbleMenu(ed: TiptapEditor) {
+  // 查找导航（程序化设置选区）期间不弹出悬浮工具条（BubbleMenu）
+  if (isSearchNavigating.value) {
+    bubbleMenuRef.value?.update(false, 0, 0, {});
+    return;
+  }
   const { from, to, empty } = ed.state.selection;
   if (empty) {
     bubbleMenuRef.value?.update(false, 0, 0, {});

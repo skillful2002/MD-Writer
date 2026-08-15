@@ -30,6 +30,7 @@ import {
   type SlashCommandItem,
 } from './extensions/slash-commands';
 import { DragHandle } from './extensions/drag-handle';
+import { SearchHighlight } from './extensions/search-highlight';
 
 type SlashCommandSuggestionProps = SuggestionProps<SlashCommandItem, SlashCommandItem>;
 
@@ -121,5 +122,6 @@ export function createEditorExtensions(options: EditorExtensionOptions) {
       },
     }),
     DragHandle,
+    SearchHighlight,
   ];
 }

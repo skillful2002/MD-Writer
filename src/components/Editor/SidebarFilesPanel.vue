@@ -20,7 +20,8 @@ const emit = defineEmits<{
   (e: 'open-recent', path: string): void;
   (e: 'select-node', node: TreeNode, event?: MouseEvent): void;
   (e: 'context-menu', event: MouseEvent, node: TreeNode): void;
-  (e: 'new-menu', event: MouseEvent): void;
+  (e: 'new-markdown'): void;
+  (e: 'folder-menu', event: MouseEvent): void;
 }>();
 </script>
 
@@ -94,11 +95,18 @@ const emit = defineEmits<{
       style="border-color: var(--border-color); background: var(--sidebar-bg)"
     >
       <div class="flex items-center justify-between">
-        <span class="text-[10px] text-gray-400 truncate flex-1">{{ rootFolderName }}</span>
+        <button
+          class="flex items-center text-[10px] text-gray-400 truncate flex-1 text-left hover:text-blue-500 transition-colors"
+          :title="`当前文件夹：${rootFolder}\n点击以关闭此文件夹`"
+          @click="emit('folder-menu', $event)"
+        >
+          <span class="mr-1 flex-shrink-0">📁</span>
+          <span class="truncate">{{ rootFolderName }}</span>
+        </button>
         <button
           class="ml-2 flex-shrink-0 text-gray-400 hover:text-blue-500 transition-colors"
-          title="新建"
-          @click="emit('new-menu', $event)"
+          title="新建 Markdown 文件"
+          @click="emit('new-markdown')"
         >
           <svg
             class="w-4 h-4"

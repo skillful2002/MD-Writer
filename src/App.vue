@@ -28,6 +28,7 @@ import { useSettingsStore } from './stores/settings';
 import { useRecentFoldersStore } from './stores/recentFolders';
 import { message } from './services/tauri/dialog';
 import { findCommandByShortcut } from './utils/shortcuts';
+import { dirname } from './utils/path';
 import { isMac } from './utils/platform';
 import pkg from '../package.json';
 
@@ -150,8 +151,15 @@ async function handleOpenNewWindow(path?: string) {
   await windowSession.handleOpenEditorWindow(path);
 }
 
-function handleFileCreatedWrapper(name: string, isFolder: boolean) {
-  void workspaceSession.createEntry(name, isFolder);
+function handleFileCreatedWrapper(name: string, isFolder: boolean, targetDir?: string | null) {
+  void workspaceSession.createEntry(name, isFolder, targetDir ?? undefined);
+}
+
+/** 点击侧栏 + 号：在当前打开文件所在目录新建一个未命名 Markdown 文档。 */
+function handleNewMarkdownFromSidebar() {
+  const currentPath = fileStore.currentFile.path;
+  const dir = currentPath ? dirname(currentPath) : (rootFolder.value ?? null);
+  void documentSession.createNewMarkdown(dir || null);
 }
 
 const windowTitle = computed(() => {
@@ -303,6 +311,8 @@ onUnmounted(() => {
           @file-created="handleFileCreatedWrapper"
           @reveal-in-finder="handleRevealInFinder"
           @rename-completed="handleRenameCompleted"
+          @new-markdown="handleNewMarkdownFromSidebar"
+          @close-folder="handleCloseFolder"
         />
       </aside>
 

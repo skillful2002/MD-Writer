@@ -9,7 +9,7 @@ export interface SidebarContextMenuState {
   node: TreeNode | null;
 }
 
-export interface SidebarNewMenuState {
+export interface SidebarFolderMenuState {
   visible: boolean;
   x: number;
   y: number;
@@ -17,7 +17,7 @@ export interface SidebarNewMenuState {
 
 defineProps<{
   contextMenu: SidebarContextMenuState;
-  newMenu: SidebarNewMenuState;
+  folderMenu: SidebarFolderMenuState;
 }>();
 
 const emit = defineEmits<{
@@ -26,6 +26,8 @@ const emit = defineEmits<{
   (e: 'delete'): void;
   (e: 'new-file'): void;
   (e: 'new-folder'): void;
+  (e: 'reveal-folder'): void;
+  (e: 'close-folder'): void;
 }>();
 </script>
 
@@ -37,6 +39,14 @@ const emit = defineEmits<{
       :style="{ left: contextMenu.x + 'px', top: contextMenu.y + 'px' }"
     >
       <div v-if="contextMenu.node" class="context-menu-items">
+        <div class="context-menu-item" @click="emit('new-file')">
+          <span class="context-menu-icon">📄</span>
+          <span>新建文件</span>
+        </div>
+        <div class="context-menu-item" @click="emit('new-folder')">
+          <span class="context-menu-icon">📁</span>
+          <span>新建文件夹</span>
+        </div>
         <div class="context-menu-item" @click="emit('rename')">
           <span class="context-menu-icon">✏️</span>
           <span>重命名</span>
@@ -53,18 +63,18 @@ const emit = defineEmits<{
     </div>
 
     <div
-      v-if="newMenu.visible"
+      v-if="folderMenu.visible"
       class="context-menu"
-      :style="{ left: newMenu.x + 'px', top: newMenu.y + 'px' }"
+      :style="{ left: folderMenu.x + 'px', top: folderMenu.y + 'px' }"
     >
       <div class="context-menu-items">
-        <div class="context-menu-item" @click="emit('new-file')">
-          <span class="context-menu-icon">📄</span>
-          <span>新建文件</span>
+        <div class="context-menu-item" @click="emit('reveal-folder')">
+          <span class="context-menu-icon">📂</span>
+          <span>在 {{ getFileManagerName() }} 中显示</span>
         </div>
-        <div class="context-menu-item" @click="emit('new-folder')">
-          <span class="context-menu-icon">📁</span>
-          <span>新建文件夹</span>
+        <div class="context-menu-item context-menu-item-danger" @click="emit('close-folder')">
+          <span class="context-menu-icon">🚪</span>
+          <span>关闭文件夹</span>
         </div>
       </div>
     </div>

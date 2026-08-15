@@ -1,15 +1,13 @@
 import { ref, type Ref } from 'vue';
 import type { Editor as TiptapEditor } from '@tiptap/vue-3';
-
-interface SearchMatch {
-  from: number;
-  to: number;
-}
+import { setSearchDecorations, type SearchMatch } from './extensions/search-highlight';
 
 export function useEditorSearch(editor: Ref<TiptapEditor | null>) {
   const isSearchVisible = ref(false);
   const searchMatchCount = ref(0);
   const searchCurrentIndex = ref(0);
+  // 标记「查找导航中」：期间由 find 设置的非空选区不应触发编辑器悬浮工具条（BubbleMenu）
+  const isSearchNavigating = ref(false);
 
   let searchQuery = '';
   let caseSensitive = false;
@@ -33,10 +31,20 @@ export function useEditorSearch(editor: Ref<TiptapEditor | null>) {
     return results;
   }
 
+  // 把当前匹配位置推送给编辑器，渲染常驻高亮 decoration（失焦也可见）。
+  function updateDecorations() {
+    const view = editor.value?.view;
+    if (!view) return;
+    setSearchDecorations(view, currentMatches, Math.max(0, searchCurrentIndex.value - 1));
+  }
+
   function scrollToMatch(index: number) {
     if (!editor.value || index < 0 || index >= currentMatches.length) return;
     const match = currentMatches[index];
+    // 标记导航中，抑制编辑器悬浮工具条（BubbleMenu）在非空选区上弹出
+    isSearchNavigating.value = true;
     editor.value.commands.setTextSelection(match);
+    isSearchNavigating.value = false;
     const dom = editor.value.view.domAtPos(match.from);
     const el = dom.node instanceof HTMLElement ? dom.node : dom.node.parentElement;
     el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -48,6 +56,7 @@ export function useEditorSearch(editor: Ref<TiptapEditor | null>) {
     searchMatchCount.value = currentMatches.length;
     searchCurrentIndex.value = currentMatches.length > 0 ? 1 : 0;
     if (currentMatches.length > 0) scrollToMatch(0);
+    updateDecorations();
   }
 
   function onSearchCaseSensitive(sensitive: boolean) {
@@ -60,6 +69,7 @@ export function useEditorSearch(editor: Ref<TiptapEditor | null>) {
     searchCurrentIndex.value =
       searchCurrentIndex.value >= searchMatchCount.value ? 1 : searchCurrentIndex.value + 1;
     scrollToMatch(searchCurrentIndex.value - 1);
+    updateDecorations();
   }
 
   function onSearchPrev() {
@@ -67,6 +77,7 @@ export function useEditorSearch(editor: Ref<TiptapEditor | null>) {
     searchCurrentIndex.value =
       searchCurrentIndex.value <= 1 ? searchMatchCount.value : searchCurrentIndex.value - 1;
     scrollToMatch(searchCurrentIndex.value - 1);
+    updateDecorations();
   }
 
   function onSearchReplace(replacement: string) {
@@ -75,13 +86,16 @@ export function useEditorSearch(editor: Ref<TiptapEditor | null>) {
     if (idx < 0 || idx >= currentMatches.length) return;
     const match = currentMatches[idx];
 
+    // 去掉 .focus()：避免抢走查找框焦点，保持「回车跳下一个」的连续查找体验；
+    // 同时标记导航中，抑制替换时选区变化触发的悬浮工具条
+    isSearchNavigating.value = true;
     editor.value
       .chain()
-      .focus()
       .setTextSelection(match)
       .deleteSelection()
       .insertContent(replacement)
       .run();
+    isSearchNavigating.value = false;
 
     currentMatches = findMatches(searchQuery);
     searchMatchCount.value = currentMatches.length;
@@ -89,20 +103,24 @@ export function useEditorSearch(editor: Ref<TiptapEditor | null>) {
       searchCurrentIndex.value = currentMatches.length > 0 ? 1 : 0;
     }
     if (currentMatches.length > 0) scrollToMatch(searchCurrentIndex.value - 1);
+    updateDecorations();
   }
 
   function onSearchReplaceAll(replacement: string) {
     if (!editor.value || currentMatches.length === 0) return;
+    isSearchNavigating.value = true;
     const matches = [...currentMatches].reverse();
     const chain = editor.value.chain();
     for (const match of matches) {
       chain.setTextSelection(match).deleteSelection().insertContent(replacement);
     }
     chain.run();
+    isSearchNavigating.value = false;
 
     currentMatches = findMatches(searchQuery);
     searchMatchCount.value = currentMatches.length;
     searchCurrentIndex.value = 0;
+    updateDecorations();
   }
 
   function openSearch() {
@@ -114,12 +132,15 @@ export function useEditorSearch(editor: Ref<TiptapEditor | null>) {
     searchMatchCount.value = 0;
     searchCurrentIndex.value = 0;
     searchQuery = '';
+    currentMatches = [];
+    updateDecorations();
   }
 
   return {
     isSearchVisible,
     searchMatchCount,
     searchCurrentIndex,
+    isSearchNavigating,
     onSearchQuery,
     onSearchCaseSensitive,
     onSearchNext,

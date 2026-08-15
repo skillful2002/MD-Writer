@@ -10,6 +10,7 @@ export interface SidebarNewDialogState {
   visible: boolean;
   name: string;
   isFolder: boolean;
+  targetDir: string | null;
 }
 
 const props = defineProps<{

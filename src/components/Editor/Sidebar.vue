@@ -16,17 +16,20 @@
       @open-recent="$emit('open-recent', $event)"
       @select-node="handleNodeClick"
       @context-menu="showContextMenu"
-      @new-menu="showNewMenu"
+      @new-markdown="$emit('new-markdown')"
+      @folder-menu="showFolderMenu"
     />
 
     <SidebarMenus
       :context-menu="contextMenu"
-      :new-menu="newMenu"
+      :folder-menu="folderMenu"
       @rename="handleRename"
       @reveal="handleRevealInFinder"
       @delete="handleDelete"
-      @new-file="handleNewFile"
-      @new-folder="handleNewFolder"
+      @new-file="handleNewFileInContext"
+      @new-folder="handleNewFolderInContext"
+      @reveal-folder="handleRevealFolder"
+      @close-folder="handleCloseFolderMenu"
     />
 
     <SidebarFileDialogs
@@ -47,6 +50,7 @@ import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue';
 import type { TreeNode } from '../../composables/useWorkspaceSession';
 import type { RecentFolder } from '../../services/tauri/history-store';
 import { confirm } from '../../services/tauri/dialog';
+import { dirname } from '../../utils/path';
 import SidebarFileDialogs from './SidebarFileDialogs.vue';
 import SidebarFilesPanel from './SidebarFilesPanel.vue';
 import SidebarMenus from './SidebarMenus.vue';
@@ -69,9 +73,11 @@ const emit = defineEmits<{
   (e: 'refresh-files'): void;
   (e: 'file-renamed', oldPath: string, newName: string): void;
   (e: 'file-deleted', path: string): void;
-  (e: 'file-created', name: string, isFolder: boolean): void;
+  (e: 'file-created', name: string, isFolder: boolean, targetDir?: string | null): void;
   (e: 'reveal-in-finder', path: string): void;
   (e: 'rename-completed'): void;
+  (e: 'new-markdown'): void;
+  (e: 'close-folder'): void;
 }>();
 
 const searchQuery = ref('');
@@ -121,7 +127,7 @@ const contextMenu = ref<{ visible: boolean; x: number; y: number; node: TreeNode
   node: null,
 });
 
-const newMenu = ref<{ visible: boolean; x: number; y: number }>({
+const folderMenu = ref<{ visible: boolean; x: number; y: number }>({
   visible: false,
   x: 0,
   y: 0,
@@ -132,24 +138,32 @@ const renameDialog = ref<{ visible: boolean; newName: string }>({
   newName: '',
 });
 
-const newDialog = ref<{ visible: boolean; name: string; isFolder: boolean }>({
+const newDialog = ref<{ visible: boolean; name: string; isFolder: boolean; targetDir: string | null }>({
   visible: false,
   name: '',
   isFolder: false,
+  targetDir: null,
 });
 
 function showContextMenu(event: MouseEvent, node: TreeNode) {
   contextMenu.value = { visible: true, x: event.clientX, y: event.clientY, node };
 }
 
-function showNewMenu(event?: MouseEvent) {
-  const btn = (event?.target ?? (window.event as MouseEvent)?.target) as HTMLElement | null;
-  const rect = btn?.getBoundingClientRect();
-  newMenu.value = {
-    visible: true,
-    x: rect ? rect.left : 0,
-    y: rect ? rect.bottom + 4 : 0,
-  };
+function showFolderMenu(event: MouseEvent) {
+  // 阻止冒泡到 document 的 click 监听，否则刚打开就被 handleClickOutside 关掉
+  event.stopPropagation();
+  contextMenu.value.visible = false;
+  if (folderMenu.value.visible) {
+    folderMenu.value.visible = false;
+    return;
+  }
+  folderMenu.value = { visible: true, x: event.clientX, y: event.clientY };
+}
+
+/** 右键节点的目标目录：目录节点本身，文件节点取其父目录。 */
+function targetDirForNode(node: TreeNode | null): string | null {
+  if (!node) return props.rootFolder;
+  return node.is_dir ? node.path : dirname(node.path) || props.rootFolder;
 }
 
 // ── 节点点击 ──────────────────────────────────────────────────
@@ -210,21 +224,38 @@ function handleRevealInFinder() {
   contextMenu.value.visible = false;
 }
 
-// ── 新建 ─────────────────────────────────────────────────────
-
-function handleNewFile() {
-  newMenu.value.visible = false;
-  emit('file-created', '__AUTO_RENAME__', false);
+function handleRevealFolder() {
+  folderMenu.value.visible = false;
+  if (props.rootFolder) emit('reveal-in-finder', props.rootFolder);
 }
 
-function handleNewFolder() {
-  newDialog.value = { visible: true, name: '', isFolder: true };
-  newMenu.value.visible = false;
+function handleCloseFolderMenu() {
+  folderMenu.value.visible = false;
+  emit('close-folder');
+}
+
+// ── 新建 ─────────────────────────────────────────────────────
+
+function handleNewFileInContext() {
+  const targetDir = targetDirForNode(contextMenu.value.node);
+  contextMenu.value.visible = false;
+  emit('file-created', '__AUTO_RENAME__', false, targetDir);
+}
+
+function handleNewFolderInContext() {
+  const targetDir = targetDirForNode(contextMenu.value.node);
+  newDialog.value = { visible: true, name: '', isFolder: true, targetDir };
+  contextMenu.value.visible = false;
 }
 
 function confirmNew() {
   if (!newDialog.value.name.trim()) return;
-  emit('file-created', newDialog.value.name.trim(), newDialog.value.isFolder);
+  emit(
+    'file-created',
+    newDialog.value.name.trim(),
+    newDialog.value.isFolder,
+    newDialog.value.targetDir,
+  );
   newDialog.value.visible = false;
 }
 
@@ -249,7 +280,7 @@ watch(
 
 function handleClickOutside() {
   contextMenu.value.visible = false;
-  newMenu.value.visible = false;
+  folderMenu.value.visible = false;
 }
 
 onMounted(() => document.addEventListener('click', handleClickOutside));

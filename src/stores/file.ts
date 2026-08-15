@@ -11,6 +11,8 @@ interface FileStoreState {
   currentFile: FileState;
   hasUserEdit: boolean;
   isLoading: boolean;
+  // 未命名（新建）文档首次保存时建议默认定位的目录
+  suggestedDir: string | null;
 }
 
 function createEmptyFileState(): FileState {
@@ -28,6 +30,7 @@ export const useFileStore = defineStore('file', {
     // 标记用户是否有过编辑操作
     hasUserEdit: false,
     isLoading: false,
+    suggestedDir: null,
   }),
 
   actions: {
@@ -71,6 +74,11 @@ export const useFileStore = defineStore('file', {
     reset() {
       this.currentFile = createEmptyFileState();
       this.hasUserEdit = false;
+      this.suggestedDir = null;
+    },
+
+    setSuggestedDir(dir: string | null) {
+      this.suggestedDir = dir;
     },
   },
 });

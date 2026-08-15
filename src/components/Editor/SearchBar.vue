@@ -1,7 +1,7 @@
 <template>
   <div
     v-show="visible"
-    class="search-bar fixed top-14 right-4 shadow-lg rounded-lg border p-3 z-50 w-80 transition-colors"
+    class="search-bar fixed top-3 left-1/2 -translate-x-1/2 shadow-lg rounded-lg border p-3 z-50 w-80 transition-colors"
     style="background-color: var(--bg-color); color: var(--text-color); border-color: var(--border-color);"
   >
     <!-- 搜索输入行 -->
@@ -205,23 +205,3 @@ defineExpose({
   }
 });
 </script>
-
-<style scoped>
-.search-match {
-  background-color: #fef08a;
-}
-
-:global(.dark) .search-match {
-  background-color: #854d0e;
-}
-
-.search-match-current {
-  background-color: #fbbf24;
-  box-shadow: 0 0 0 2px #f59e0b;
-}
-
-:global(.dark) .search-match-current {
-  background-color: #fbbf24;
-  box-shadow: 0 0 0 2px #f59e0b;
-}
-</style>

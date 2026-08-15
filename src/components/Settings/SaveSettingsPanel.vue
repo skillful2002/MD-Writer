@@ -62,11 +62,11 @@ const recentFoldersInMenu = defineModel<number>('recentFoldersInMenu', { require
           class="w-full"
           label="文件列表历史条数"
           :min="1"
-          :max="20"
+          :max="40"
           :step="1"
           value-suffix=" 条"
           min-label="1条"
-          max-label="20条"
+          max-label="40条"
         />
       </div>
 

@@ -5,6 +5,7 @@ import { confirm, message, open, save } from '../services/tauri/dialog';
 import type { WorkspaceChangedPayload } from '../services/tauri/events';
 import { useFileStore } from '../stores/file';
 import { useSettingsStore } from '../stores/settings';
+import { dirname } from '../utils/path';
 
 export interface AutoSaveStatus {
   message: string;
@@ -85,6 +86,21 @@ export function useDocumentSession(options: DocumentSessionOptions) {
     options.resetViewMode();
   }
 
+  /**
+   * 在指定目录下新建一个「未命名」Markdown 文档（内存态，不立即落盘）。
+   * 首次保存（Ctrl+S）时会弹系统「另存为」对话框，defaultPath 默认定位到 targetDir。
+   */
+  async function createNewMarkdown(targetDir: string | null) {
+    if (!(await confirmDiscardUnsavedChanges())) {
+      return;
+    }
+
+    clearExternalWarning();
+    fileStore.reset();
+    fileStore.setSuggestedDir(targetDir || null);
+    options.resetViewMode();
+  }
+
   async function handleOpenDocument() {
     const selected = await open({
       multiple: false,
@@ -135,7 +151,12 @@ export function useDocumentSession(options: DocumentSessionOptions) {
   }
 
   async function saveCurrentDocumentAs(): Promise<boolean> {
+    const currentFile = fileStore.currentFile;
+    const defaultPath = currentFile.path
+      ? dirname(currentFile.path)
+      : fileStore.suggestedDir ?? undefined;
     const selected = await save({
+      defaultPath,
       filters: [{ name: 'Markdown', extensions: ['md'] }],
     });
     if (!selected) {
@@ -261,6 +282,7 @@ export function useDocumentSession(options: DocumentSessionOptions) {
     loadDocumentFromPath,
     openDocumentWithPrompt,
     handleNewDocument,
+    createNewMarkdown,
     handleOpenDocument,
     saveCurrentDocument,
     saveCurrentDocumentAs,

@@ -1043,3 +1043,27 @@ html.dark .mk-slash-menu {
   border-radius: 1px;
   pointer-events: none;
 }
+
+/* ── 查找高亮（常驻 decoration，失焦也可见）───────────────────────
+ * 由 SearchHighlight 扩展渲染为编辑器内的 inline span，
+ * 故须为全局样式（scoped 无法命中 ProseMirror 生成的 DOM）。
+ */
+.tiptap-editor .search-match {
+  background-color: rgba(254, 240, 138, 0.55);
+  border-radius: 2px;
+}
+
+html.dark .tiptap-editor .search-match {
+  background-color: rgba(133, 77, 14, 0.6);
+}
+
+.tiptap-editor .search-match-current {
+  background-color: #fbbf24;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.7);
+  border-radius: 2px;
+}
+
+html.dark .tiptap-editor .search-match-current {
+  background-color: #fbbf24;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.85);
+}
