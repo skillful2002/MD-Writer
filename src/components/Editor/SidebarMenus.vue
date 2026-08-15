@@ -14,6 +14,8 @@ export interface SidebarFolderMenuState {
   visible: boolean;
   x: number;
   y: number;
+  /** 触发器（当前文件夹按钮）矩形，用于把菜单定位在名称正上方并左对齐。 */
+  rect: { left: number; top: number; width: number; height: number } | null;
 }
 
 const props = defineProps<{
@@ -55,6 +57,32 @@ function fitToViewport(el: HTMLElement | null, x: number, y: number) {
   return { left, top };
 }
 
+// 文件夹菜单：锚定在触发器按钮正上方、左边缘对齐按钮左边缘。
+// 顶部空间不足时翻转到按钮下方，再做视口夹紧。
+function positionFolderMenu(
+  el: HTMLElement | null,
+  rect: { left: number; top: number; width: number; height: number },
+) {
+  const margin = 8;
+  const gap = 6;
+  const width = el?.getBoundingClientRect().width ?? 180;
+  const height = el?.getBoundingClientRect().height ?? 90;
+  let left = rect.left;
+  let top = rect.top - height - gap; // 默认显示在按钮上方
+  if (top < margin) {
+    // 上方放不下则翻转到按钮下方
+    top = rect.top + rect.height + gap;
+  }
+  if (left + width > window.innerWidth - margin) {
+    left = Math.max(margin, window.innerWidth - margin - width);
+  }
+  if (left < margin) left = margin;
+  if (top + height > window.innerHeight - margin) {
+    top = Math.max(margin, window.innerHeight - margin - height);
+  }
+  return { left, top };
+}
+
 watch(
   () => props.contextMenu.visible,
   (visible) => {
@@ -74,13 +102,15 @@ watch(
   () => props.folderMenu.visible,
   (visible) => {
     if (!visible) return;
-    folderMenuPos.value = { left: props.folderMenu.x, top: props.folderMenu.y };
+    const rect = props.folderMenu.rect;
+    // 先放到触发器位置避免测量前的闪烁，随后按矩形精确定位到上方
+    folderMenuPos.value = rect
+      ? { left: rect.left, top: rect.top }
+      : { left: props.folderMenu.x, top: props.folderMenu.y };
     nextTick(() => {
-      folderMenuPos.value = fitToViewport(
-        folderMenuEl.value,
-        props.folderMenu.x,
-        props.folderMenu.y,
-      );
+      folderMenuPos.value = rect
+        ? positionFolderMenu(folderMenuEl.value, rect)
+        : fitToViewport(folderMenuEl.value, props.folderMenu.x, props.folderMenu.y);
     });
   },
 );
@@ -126,11 +156,21 @@ watch(
     >
       <div class="context-menu-items">
         <div class="context-menu-item" @click="emit('reveal-folder')">
-          <span class="context-menu-icon">📂</span>
+          <span class="context-menu-icon">
+            <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
+              <path d="M2 10h20" />
+            </svg>
+          </span>
           <span>在 {{ getFileManagerName() }} 中显示</span>
         </div>
         <div class="context-menu-item" @click="emit('close-folder')">
-          <span class="context-menu-icon">✕</span>
+          <span class="context-menu-icon">
+            <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
+          </span>
           <span>关闭文件夹</span>
         </div>
       </div>
@@ -189,5 +229,13 @@ watch(
 .context-menu-icon {
   margin-right: 8px;
   font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.menu-icon {
+  width: 16px;
+  height: 16px;
+  display: block;
 }
 </style>

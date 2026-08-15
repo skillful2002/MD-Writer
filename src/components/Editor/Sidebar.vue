@@ -127,10 +127,16 @@ const contextMenu = ref<{ visible: boolean; x: number; y: number; node: TreeNode
   node: null,
 });
 
-const folderMenu = ref<{ visible: boolean; x: number; y: number }>({
+const folderMenu = ref<{
+  visible: boolean;
+  x: number;
+  y: number;
+  rect: { left: number; top: number; width: number; height: number } | null;
+}>({
   visible: false,
   x: 0,
   y: 0,
+  rect: null,
 });
 
 const renameDialog = ref<{ visible: boolean; newName: string }>({
@@ -157,7 +163,17 @@ function showFolderMenu(event: MouseEvent) {
     folderMenu.value.visible = false;
     return;
   }
-  folderMenu.value = { visible: true, x: event.clientX, y: event.clientY };
+  // 用触发器按钮的矩形定位，让菜单出现在名称正上方并左对齐
+  const target = event.currentTarget as HTMLElement | null;
+  const rect = target?.getBoundingClientRect() ?? null;
+  folderMenu.value = {
+    visible: true,
+    x: rect ? rect.left : event.clientX,
+    y: rect ? rect.top : event.clientY,
+    rect: rect
+      ? { left: rect.left, top: rect.top, width: rect.width, height: rect.height }
+      : null,
+  };
 }
 
 /** 右键节点的目标目录：目录节点本身，文件节点取其父目录。 */
