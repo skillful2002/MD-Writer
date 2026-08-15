@@ -171,6 +171,8 @@ function onKeyDown(e: KeyboardEvent) {
                   v-show="activeTab === 'save'"
                   v-model:auto-save="settings.autoSave"
                   v-model:auto-save-interval="settings.autoSaveInterval"
+                  v-model:recent-folders-in-sidebar="settings.recentFoldersInSidebar"
+                  v-model:recent-folders-in-menu="settings.recentFoldersInMenu"
                 />
 
                 <!-- 导出设置 -->

@@ -4,6 +4,8 @@ import SettingsSwitch from './SettingsSwitch.vue';
 
 const autoSave = defineModel<boolean>('autoSave', { required: true });
 const autoSaveInterval = defineModel<number>('autoSaveInterval', { required: true });
+const recentFoldersInSidebar = defineModel<number>('recentFoldersInSidebar', { required: true });
+const recentFoldersInMenu = defineModel<number>('recentFoldersInMenu', { required: true });
 </script>
 
 <template>
@@ -45,6 +47,44 @@ const autoSaveInterval = defineModel<number>('autoSaveInterval', { required: tru
           value-suffix=" 秒"
           min-label="10秒"
           max-label="120秒"
+        />
+      </div>
+    </section>
+
+    <section class="settings-section-card">
+      <div class="settings-row settings-row--column">
+        <div>
+          <label class="settings-row-title">文件列表中显示的历史记录条数</label>
+          <p class="settings-row-desc">左侧文件列表在初始/关闭文件夹后，显示最近打开文件夹的数量。</p>
+        </div>
+        <SettingsRangeField
+          v-model="recentFoldersInSidebar"
+          class="w-full"
+          label="文件列表历史条数"
+          :min="1"
+          :max="20"
+          :step="1"
+          value-suffix=" 条"
+          min-label="1条"
+          max-label="20条"
+        />
+      </div>
+
+      <div class="settings-row settings-row--column">
+        <div>
+          <label class="settings-row-title">菜单中显示的历史记录条数</label>
+          <p class="settings-row-desc">「文件 → 打开历史记录」子菜单中显示的最近打开文件夹数量。</p>
+        </div>
+        <SettingsRangeField
+          v-model="recentFoldersInMenu"
+          class="w-full"
+          label="菜单历史条数"
+          :min="1"
+          :max="20"
+          :step="1"
+          value-suffix=" 条"
+          min-label="1条"
+          max-label="20条"
         />
       </div>
     </section>

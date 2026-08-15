@@ -137,12 +137,13 @@ export function useWorkspaceSession(options: WorkspaceSessionOptions) {
     }
   }
 
-  async function openWorkspacePicker() {
+  async function openWorkspacePicker(): Promise<string | null> {
     const selected = await open({ directory: true, title: '选择文件夹' });
     if (!selected || typeof selected !== 'string') {
-      return false;
+      return null;
     }
-    return loadWorkspace(selected);
+    const ok = await loadWorkspace(selected);
+    return ok ? selected : null;
   }
 
   async function toggleDir(path: string) {
@@ -283,6 +284,15 @@ export function useWorkspaceSession(options: WorkspaceSessionOptions) {
     });
   }
 
+  function closeWorkspace() {
+    if (watchedFolder.value) {
+      void unwatchWorkspace(watchedFolder.value);
+      watchedFolder.value = null;
+    }
+    rootFolder.value = null;
+    treeNodes.value = [];
+  }
+
   function cleanup() {
     unlistenWorkspace?.();
     unlistenWorkspace = null;
@@ -309,6 +319,7 @@ export function useWorkspaceSession(options: WorkspaceSessionOptions) {
     handleRenameCompleted,
     revealInFinder,
     syncWorkspaceFromDocumentPath,
+    closeWorkspace,
     setup,
     cleanup,
   };

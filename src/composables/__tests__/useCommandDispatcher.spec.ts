@@ -72,6 +72,9 @@ function createDispatcher() {
     showAbout,
     toggleFullscreen,
     handleQuit,
+    handleCloseFolder: vi.fn(),
+    openRecentByIndex: vi.fn(),
+    clearRecentFolders: vi.fn(),
   });
 
   return {

@@ -35,6 +35,9 @@ export interface CommandDispatcherOptions {
   showAbout: () => void | Promise<void>;
   toggleFullscreen: () => void | Promise<void>;
   handleQuit: () => void | Promise<void>;
+  handleCloseFolder: () => void | Promise<void>;
+  openRecentByIndex: (index: number) => void | Promise<void>;
+  clearRecentFolders: () => void | Promise<void>;
 }
 
 export function useCommandDispatcher(options: CommandDispatcherOptions) {
@@ -52,6 +55,16 @@ export function useCommandDispatcher(options: CommandDispatcherOptions) {
   }
 
   async function executeCommand(commandId: string, source: CommandSource = 'menu'): Promise<boolean> {
+    // 动态历史菜单项：file.openRecent.<index>
+    if (commandId.startsWith('file.openRecent.')) {
+      const index = Number.parseInt(commandId.slice('file.openRecent.'.length), 10);
+      if (Number.isInteger(index) && index >= 0) {
+        await options.openRecentByIndex(index);
+        return true;
+      }
+      return false;
+    }
+
     const command = getCommand(commandId);
     if (!command) {
       return false;
@@ -142,6 +155,12 @@ export function useCommandDispatcher(options: CommandDispatcherOptions) {
         return true;
       case 'help.diagnostics':
         await revealStartupOpenLog();
+        return true;
+      case 'file.closeFolder':
+        await options.handleCloseFolder();
+        return true;
+      case 'file.clearRecent':
+        await options.clearRecentFolders();
         return true;
       case 'app.quit':
         await options.handleQuit();

@@ -25,6 +25,7 @@ import EditorToolbar from './components/Toolbar/EditorToolbar.vue';
 import SidebarOutlinePanel from './components/Editor/SidebarOutlinePanel.vue';
 import { useFileStore } from './stores/file';
 import { useSettingsStore } from './stores/settings';
+import { useRecentFoldersStore } from './stores/recentFolders';
 import { message } from './services/tauri/dialog';
 import { findCommandByShortcut } from './utils/shortcuts';
 import { isMac } from './utils/platform';
@@ -34,7 +35,11 @@ const MarkdownEditor = defineAsyncComponent(() => import('./components/Editor/Ma
 
 const fileStore = useFileStore();
 const settingsStore = useSettingsStore();
+const recentFoldersStore = useRecentFoldersStore();
 const { settings, isLoaded } = storeToRefs(settingsStore);
+const recentFoldersForSidebar = computed(() =>
+  recentFoldersStore.displayFolders(settings.value.recentFoldersInSidebar),
+);
 const appVersion = pkg.version;
 const { editorRef, stats, outlineItems, handleEditorUpdate, scrollToHeading } =
   useAppEditorState();
@@ -102,11 +107,43 @@ const {
   showImagePasteWarning,
 } = useAppUiState();
 
-async function handleOpenFolder() {
-  const opened = await workspaceSession.openWorkspacePicker();
-  if (opened) {
+function folderNameFromPath(path: string): string {
+  const parts = path.split(/[/\\]/).filter(Boolean);
+  return parts[parts.length - 1] ?? path;
+}
+
+async function openWorkspaceByPath(path: string): Promise<boolean> {
+  const ok = await workspaceSession.loadWorkspace(path);
+  if (ok) {
     isSidebarOpen.value = true;
+    await recentFoldersStore.add(path, folderNameFromPath(path));
   }
+  return ok;
+}
+
+async function handleOpenFolder() {
+  const path = await workspaceSession.openWorkspacePicker();
+  if (path) {
+    isSidebarOpen.value = true;
+    await recentFoldersStore.add(path, folderNameFromPath(path));
+  }
+}
+
+async function openRecentByIndex(index: number) {
+  const folder = recentFoldersStore.folders[index];
+  if (folder) {
+    await openWorkspaceByPath(folder.path);
+  }
+}
+
+async function clearRecentFolders() {
+  await recentFoldersStore.clear();
+}
+
+async function handleCloseFolder() {
+  workspaceSession.closeWorkspace();
+  fileStore.reset();
+  resetToEditor();
 }
 
 async function handleOpenNewWindow(path?: string) {
@@ -170,6 +207,9 @@ const { executeCommand } = useCommandDispatcher({
   showAbout,
   toggleFullscreen: windowSession.toggleFullscreen,
   handleQuit: windowSession.handleQuit,
+  handleCloseFolder,
+  openRecentByIndex,
+  clearRecentFolders,
 });
 
 useAppDomEvents({
@@ -207,6 +247,7 @@ onMounted(async () => {
   await workspaceSession.setup();
   await windowSession.setup();
   await syncMenuShortcuts();
+  await recentFoldersStore.load();
 });
 
 onUnmounted(() => {
@@ -249,7 +290,9 @@ onUnmounted(() => {
           :root-folder="rootFolder"
           :current-file-path="fileStore.currentFile.path"
           :pending-rename-path="pendingRenamePath"
+          :recent-folders="recentFoldersForSidebar"
           @open-folder="handleOpenFolder"
+          @open-recent="openWorkspaceByPath"
           @open-file="handleOpenFile"
           @open-image="handleOpenImage"
           @toggle-dir="toggleDir"

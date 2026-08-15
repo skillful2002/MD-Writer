@@ -10,8 +10,10 @@
       :search-results="searchResults"
       :flat-tree="flatTree"
       :current-file-path="currentFilePath"
+      :recent-folders="recentFolders"
       @update-search-query="searchQuery = $event"
       @open-folder="$emit('open-folder')"
+      @open-recent="$emit('open-recent', $event)"
       @select-node="handleNodeClick"
       @context-menu="showContextMenu"
       @new-menu="showNewMenu"
@@ -43,6 +45,7 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue';
 import type { TreeNode } from '../../composables/useWorkspaceSession';
+import type { RecentFolder } from '../../services/tauri/history-store';
 import { confirm } from '../../services/tauri/dialog';
 import SidebarFileDialogs from './SidebarFileDialogs.vue';
 import SidebarFilesPanel from './SidebarFilesPanel.vue';
@@ -53,10 +56,12 @@ const props = defineProps<{
   rootFolder: string | null;
   currentFilePath: string | null;
   pendingRenamePath?: string | null;
+  recentFolders: RecentFolder[];
 }>();
 
 const emit = defineEmits<{
   (e: 'open-folder'): void;
+  (e: 'open-recent', path: string): void;
   (e: 'open-file', path: string): void;
   (e: 'open-image', path: string): void;
   (e: 'open-file-in-new-window', path: string): void;

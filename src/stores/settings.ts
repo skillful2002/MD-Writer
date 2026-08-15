@@ -38,6 +38,10 @@ export interface Settings {
   customShortcuts: Record<string, string>;
   /** Custom editor CSS */
   customEditorCSS: string;
+  /** 左侧文件列表中显示的最近打开文件夹数量 */
+  recentFoldersInSidebar: number;
+  /** 菜单「打开历史记录」中显示的最近打开文件夹数量 */
+  recentFoldersInMenu: number;
   /** Config version */
   configVersion: number;
 }
@@ -56,6 +60,8 @@ const DEFAULT_SETTINGS: Settings = {
   wechatTheme: 'blue',
   customShortcuts: {},
   customEditorCSS: '',
+  recentFoldersInSidebar: 10,
+  recentFoldersInMenu: 10,
   configVersion: 5,
 };
 

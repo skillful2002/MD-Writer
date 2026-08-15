@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { TreeNode } from '../../composables/useWorkspaceSession';
+import type { RecentFolder } from '../../services/tauri/history-store';
 import FileTreePanel from './FileTreePanel.vue';
 import FileTreeSearchResults from './FileTreeSearchResults.vue';
 
@@ -10,11 +11,13 @@ defineProps<{
   searchResults: TreeNode[];
   flatTree: Array<{ node: TreeNode; depth: number }>;
   currentFilePath: string | null;
+  recentFolders: RecentFolder[];
 }>();
 
 const emit = defineEmits<{
   (e: 'update-search-query', value: string): void;
   (e: 'open-folder'): void;
+  (e: 'open-recent', path: string): void;
   (e: 'select-node', node: TreeNode, event?: MouseEvent): void;
   (e: 'context-menu', event: MouseEvent, node: TreeNode): void;
   (e: 'new-menu', event: MouseEvent): void;
@@ -23,11 +26,32 @@ const emit = defineEmits<{
 
 <template>
   <div class="flex-1 flex flex-col overflow-hidden">
-    <div v-if="!rootFolder" class="flex-1 p-4 text-xs text-gray-400 italic">
-      请打开文件夹以查看文件列表
-      <button class="block mt-2 text-blue-500 hover:underline" @click="emit('open-folder')">
-        打开文件夹
-      </button>
+    <div v-if="!rootFolder" class="flex-1 overflow-y-auto p-3">
+      <template v-if="recentFolders.length">
+        <button
+          class="block mb-3 text-blue-500 hover:underline text-xs px-1"
+          @click="emit('open-folder')"
+        >
+          打开其他文件夹…
+        </button>
+        <div class="text-[11px] text-gray-400 mb-1 px-1">最近打开的文件夹</div>
+        <button
+          v-for="folder in recentFolders"
+          :key="folder.path"
+          class="w-full flex items-center text-left px-2 py-1.5 rounded-md text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+          :title="folder.path"
+          @click="emit('open-recent', folder.path)"
+        >
+          <span class="mr-1.5 flex-shrink-0">📁</span>
+          <span class="truncate">{{ folder.name }}</span>
+        </button>
+      </template>
+      <div v-else class="p-4 text-xs text-gray-400 italic">
+        请打开文件夹以查看文件列表
+        <button class="block mt-2 text-blue-500 hover:underline" @click="emit('open-folder')">
+          打开文件夹
+        </button>
+      </div>
     </div>
     <template v-else>
       <div class="flex-shrink-0 px-3 py-2 border-b" style="border-color: var(--border-color)">

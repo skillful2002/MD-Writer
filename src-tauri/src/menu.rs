@@ -1,6 +1,8 @@
 use crate::events::emit_menu_event;
 use std::collections::HashMap;
+use std::fs;
 use tauri::menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem, Submenu};
+use tauri::Manager;
 
 fn accelerator(
     shortcuts: &HashMap<String, String>,
@@ -87,54 +89,55 @@ fn build_menu(
         ],
     )?;
 
-    let file_menu = Submenu::with_items(
-        app,
-        "文件",
-        true,
-        &[
-            &MenuItem::with_id(app, "file.new", "新建", true, new_accel.as_deref())?,
-            &MenuItem::with_id(
-                app,
-                "file.newWindow",
-                "新建窗口",
-                true,
-                new_window_accel.as_deref(),
-            )?,
-            &MenuItem::with_id(app, "file.open", "打开...", true, open_accel.as_deref())?,
-            &MenuItem::with_id(app, "file.openFolder", "打开文件夹...", true, None::<&str>)?,
-            &PredefinedMenuItem::separator(app)?,
-            &MenuItem::with_id(app, "file.save", "保存", true, save_accel.as_deref())?,
-            &MenuItem::with_id(
-                app,
-                "file.saveAs",
-                "另存为...",
-                true,
-                save_as_accel.as_deref(),
-            )?,
-            &PredefinedMenuItem::separator(app)?,
-            &MenuItem::with_id(
-                app,
-                "export.html",
-                "导出为 HTML",
-                true,
-                export_html_accel.as_deref(),
-            )?,
-            &MenuItem::with_id(
-                app,
-                "export.pdf",
-                "导出为 PDF...",
-                true,
-                export_pdf_accel.as_deref(),
-            )?,
-            &MenuItem::with_id(
-                app,
-                "export.wechat",
-                "微信导出",
-                true,
-                export_wechat_accel.as_deref(),
-            )?,
-        ],
-    )?;
+    let recents = read_recent_folders(app);
+    let menu_limit = read_recent_menu_limit(app);
+    let mut history_owned: Vec<Box<dyn tauri::menu::IsMenuItem<tauri::Wry>>> = Vec::new();
+    if recents.is_empty() {
+        history_owned.push(Box::new(MenuItem::with_id(app, "file.openRecent.empty", "（无历史记录）", false, None::<&str>)?));
+    } else {
+        for (i, (recent_path, recent_name)) in recents.iter().take(menu_limit).enumerate() {
+            let label = if recent_name.is_empty() {
+                recent_path.clone()
+            } else {
+                recent_name.clone()
+            };
+            history_owned.push(Box::new(MenuItem::with_id(app, format!("file.openRecent.{i}"), label, true, None::<&str>)?));
+        }
+    }
+    history_owned.push(Box::new(PredefinedMenuItem::separator(app)?));
+    history_owned.push(Box::new(MenuItem::with_id(app, "file.clearRecent", "清除历史记录", !recents.is_empty(), None::<&str>)?));
+    let history_refs: Vec<&dyn tauri::menu::IsMenuItem<tauri::Wry>> =
+        history_owned.iter().map(|b| b.as_ref()).collect();
+    let history_submenu = Submenu::with_items(app, "打开历史记录", true, &history_refs)?;
+
+    let file_new = MenuItem::with_id(app, "file.new", "新建", true, new_accel.as_deref())?;
+    let file_new_window = MenuItem::with_id(app, "file.newWindow", "新建窗口", true, new_window_accel.as_deref())?;
+    let file_open = MenuItem::with_id(app, "file.open", "打开...", true, open_accel.as_deref())?;
+    let file_open_folder = MenuItem::with_id(app, "file.openFolder", "打开文件夹...", true, None::<&str>)?;
+    let file_close_folder = MenuItem::with_id(app, "file.closeFolder", "关闭文件夹", true, None::<&str>)?;
+    let file_save = MenuItem::with_id(app, "file.save", "保存", true, save_accel.as_deref())?;
+    let file_save_as = MenuItem::with_id(app, "file.saveAs", "另存为...", true, save_as_accel.as_deref())?;
+    let export_html = MenuItem::with_id(app, "export.html", "导出为 HTML", true, export_html_accel.as_deref())?;
+    let export_pdf = MenuItem::with_id(app, "export.pdf", "导出为 PDF...", true, export_pdf_accel.as_deref())?;
+    let export_wechat = MenuItem::with_id(app, "export.wechat", "微信导出", true, export_wechat_accel.as_deref())?;
+    let sep1 = PredefinedMenuItem::separator(app)?;
+    let sep2 = PredefinedMenuItem::separator(app)?;
+    let file_items: Vec<&dyn tauri::menu::IsMenuItem<tauri::Wry>> = vec![
+        &file_new,
+        &file_new_window,
+        &file_open,
+        &file_open_folder,
+        &history_submenu,
+        &file_close_folder,
+        &sep1,
+        &file_save,
+        &file_save_as,
+        &sep2,
+        &export_html,
+        &export_pdf,
+        &export_wechat,
+    ];
+    let file_menu = Submenu::with_items(app, "文件", true, &file_items)?;
 
     let edit_menu = Submenu::with_items(
         app,
@@ -239,6 +242,60 @@ fn build_menu(
         app,
         &[&app_menu, &file_menu, &edit_menu, &view_menu, &help_menu],
     )
+}
+
+fn read_recent_folders(app: &tauri::AppHandle) -> Vec<(String, String)> {
+    let dir = match app.path().app_data_dir() {
+        Ok(d) => d,
+        Err(_) => return Vec::new(),
+    };
+    let path = dir.join("history.json");
+    let content = match fs::read_to_string(&path) {
+        Ok(c) => c,
+        Err(_) => return Vec::new(),
+    };
+    let value: serde_json::Value = match serde_json::from_str(&content) {
+        Ok(v) => v,
+        Err(_) => return Vec::new(),
+    };
+    let arr = match value.get("recentFolders").and_then(|v| v.as_array()) {
+        Some(a) => a,
+        None => return Vec::new(),
+    };
+    arr.iter()
+        .filter_map(|item| {
+            let path = item.get("path").and_then(|v| v.as_str())?.to_string();
+            let name = item.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            Some((path, name))
+        })
+        .collect()
+}
+
+/// 读取设置中「菜单中显示的历史记录条数」(recentFoldersInMenu)，默认 10。
+/// 该值位于 settings.json 的 { "settings": { "recentFoldersInMenu": N } }。
+fn read_recent_menu_limit(app: &tauri::AppHandle) -> usize {
+    const DEFAULT_LIMIT: usize = 10;
+    let dir = match app.path().app_data_dir() {
+        Ok(d) => d,
+        Err(_) => return DEFAULT_LIMIT,
+    };
+    let path = dir.join("settings.json");
+    let content = match fs::read_to_string(&path) {
+        Ok(c) => c,
+        Err(_) => return DEFAULT_LIMIT,
+    };
+    let value: serde_json::Value = match serde_json::from_str(&content) {
+        Ok(v) => v,
+        Err(_) => return DEFAULT_LIMIT,
+    };
+    match value
+        .get("settings")
+        .and_then(|s| s.get("recentFoldersInMenu"))
+        .and_then(|n| n.as_u64())
+    {
+        Some(n) if n >= 1 => n as usize,
+        _ => DEFAULT_LIMIT,
+    }
 }
 
 pub fn setup_menu(
