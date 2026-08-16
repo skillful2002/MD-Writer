@@ -22,6 +22,7 @@
         <span>🔗</span>
       </button>
       <div class="bubble-menu-divider"></div>
+      <button class="bubble-menu-heading-btn" title="正文" @click="exec('paragraph')">T</button>
       <button class="bubble-menu-heading-btn" @click="exec('h1')">H1</button>
       <button class="bubble-menu-heading-btn" @click="exec('h2')">H2</button>
       <button class="bubble-menu-heading-btn" @click="exec('h3')">H3</button>

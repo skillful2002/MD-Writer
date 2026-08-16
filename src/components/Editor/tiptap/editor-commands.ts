@@ -42,6 +42,9 @@ export function runBubbleMenuAction(
     case 'h4':
       chain.toggleHeading({ level: 4 }).run();
       break;
+    case 'paragraph':
+      chain.setParagraph().run();
+      break;
   }
 }
 
