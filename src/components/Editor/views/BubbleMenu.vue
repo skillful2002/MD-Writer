@@ -24,6 +24,8 @@
       <div class="bubble-menu-divider"></div>
       <button class="bubble-menu-heading-btn" @click="exec('h1')">H1</button>
       <button class="bubble-menu-heading-btn" @click="exec('h2')">H2</button>
+      <button class="bubble-menu-heading-btn" @click="exec('h3')">H3</button>
+      <button class="bubble-menu-heading-btn" @click="exec('h4')">H4</button>
     </div>
 
     <!-- 链接输入区 -->

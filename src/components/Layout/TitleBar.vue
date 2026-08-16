@@ -54,6 +54,13 @@
     </div>
 
     <div class="flex items-center h-full" data-tauri-no-drag>
+      <PanelToggleButtons
+        :is-sidebar-open="isSidebarOpen"
+        :is-outline-open="isOutlineOpen"
+        @toggle-sidebar="$emit('toggle-sidebar')"
+        @toggle-outline="$emit('toggle-outline')"
+      />
+
       <div class="control-btn hover:bg-black/5" @click="minimize">
         <svg class="w-3 h-3" viewBox="0 0 12 12">
           <rect fill="currentColor" width="10" height="1" x="1" y="6" />
@@ -99,10 +106,21 @@ import { formatShortcutDisplay } from '../../utils/shortcuts';
 import { useSettingsStore } from '../../stores/settings';
 import { emitMenuEvent, emitWindowCloseRequested } from '../../services/tauri/events';
 import { minimizeCurrentWindow, toggleCurrentWindowMaximize } from '../../services/tauri/window';
+import PanelToggleButtons from './PanelToggleButtons.vue';
 
 const activeMenu = ref<string | null>(null);
 const isMenuOpen = ref(false);
 const settingsStore = useSettingsStore();
+
+defineProps<{
+  isSidebarOpen: boolean;
+  isOutlineOpen: boolean;
+}>();
+
+defineEmits<{
+  (e: 'toggle-sidebar'): void;
+  (e: 'toggle-outline'): void;
+}>();
 
 onMounted(() => {
   window.addEventListener('mousedown', closeAllMenus);

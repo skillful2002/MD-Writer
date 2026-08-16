@@ -1067,3 +1067,76 @@ html.dark .tiptap-editor .search-match-current {
   background-color: #fbbf24;
   box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.85);
 }
+
+/* ── 行号（由设置 showLineNumbers 控制，.editor-line-numbers 时启用）──
+ * 采用 CSS counter：每个顶层 block 递增一个行号，符合 Markdown 编辑器惯例。
+ * 嵌套列表项不计入独立行号（已知简化）。
+ */
+.editor-line-numbers .tiptap-editor {
+  counter-reset: linenumber;
+  padding-left: calc(var(--mk-heading-gutter-width) + 2.75rem);
+}
+
+.editor-line-numbers .tiptap-editor > * {
+  position: relative;
+  counter-increment: linenumber;
+}
+
+/* 非标题块：行号放在左侧行号列 */
+.editor-line-numbers .tiptap-editor > *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6)::before {
+  content: counter(linenumber);
+  position: absolute;
+  left: calc(-1 * var(--mk-heading-gutter-width) - 2.5rem);
+  width: 2.25rem;
+  text-align: right;
+  color: var(--muted-color);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  opacity: 0.5;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* 标题块：复用既有 H1..H6 徽标 ::before，把行号拼到左侧，
+   保持右对齐使其中的 "H1" 仍落在原徽标位置 */
+.editor-line-numbers .tiptap-editor h1::before {
+  left: calc(-1 * (var(--mk-heading-gutter-width) + 2.75rem));
+  width: calc(var(--mk-heading-gutter-width) + 2.5rem);
+  text-align: right;
+  content: counter(linenumber) "  " "H1";
+}
+
+.editor-line-numbers .tiptap-editor h2::before {
+  left: calc(-1 * (var(--mk-heading-gutter-width) + 2.75rem));
+  width: calc(var(--mk-heading-gutter-width) + 2.5rem);
+  text-align: right;
+  content: counter(linenumber) "  " "H2";
+}
+
+.editor-line-numbers .tiptap-editor h3::before {
+  left: calc(-1 * (var(--mk-heading-gutter-width) + 2.75rem));
+  width: calc(var(--mk-heading-gutter-width) + 2.5rem);
+  text-align: right;
+  content: counter(linenumber) "  " "H3";
+}
+
+.editor-line-numbers .tiptap-editor h4::before {
+  left: calc(-1 * (var(--mk-heading-gutter-width) + 2.75rem));
+  width: calc(var(--mk-heading-gutter-width) + 2.5rem);
+  text-align: right;
+  content: counter(linenumber) "  " "H4";
+}
+
+.editor-line-numbers .tiptap-editor h5::before {
+  left: calc(-1 * (var(--mk-heading-gutter-width) + 2.75rem));
+  width: calc(var(--mk-heading-gutter-width) + 2.5rem);
+  text-align: right;
+  content: counter(linenumber) "  " "H5";
+}
+
+.editor-line-numbers .tiptap-editor h6::before {
+  left: calc(-1 * (var(--mk-heading-gutter-width) + 2.75rem));
+  width: calc(var(--mk-heading-gutter-width) + 2.5rem);
+  text-align: right;
+  content: counter(linenumber) "  " "H6";
+}

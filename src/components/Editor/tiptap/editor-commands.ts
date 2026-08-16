@@ -36,6 +36,12 @@ export function runBubbleMenuAction(
     case 'h2':
       chain.toggleHeading({ level: 2 }).run();
       break;
+    case 'h3':
+      chain.toggleHeading({ level: 3 }).run();
+      break;
+    case 'h4':
+      chain.toggleHeading({ level: 4 }).run();
+      break;
   }
 }
 

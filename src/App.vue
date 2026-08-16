@@ -20,6 +20,7 @@ import Sidebar from './components/Editor/Sidebar.vue';
 import SourceEditorView from './components/Editor/SourceEditorView.vue';
 import StatusBar from './components/Layout/StatusBar.vue';
 import TitleBar from './components/Layout/TitleBar.vue';
+import PanelToggleButtons from './components/Layout/PanelToggleButtons.vue';
 import SettingsModal from './components/Settings/SettingsModal.vue';
 import EditorToolbar from './components/Toolbar/EditorToolbar.vue';
 import SidebarOutlinePanel from './components/Editor/SidebarOutlinePanel.vue';
@@ -145,6 +146,8 @@ async function handleCloseFolder() {
   workspaceSession.closeWorkspace();
   fileStore.reset();
   resetToEditor();
+  // 关闭文件夹后当前文档已不存在，清空侧栏大纲（编辑器重挂载时不会主动回发黄框大纲）
+  outlineItems.value = [];
 }
 
 async function handleOpenNewWindow(path?: string) {
@@ -280,7 +283,31 @@ onUnmounted(() => {
     :class="{ 'focus-mode': settingsStore.isFocusMode }"
     style="background-color: var(--bg-color); color: var(--text-color)"
   >
-    <TitleBar v-if="!isMac" />
+    <!-- macOS 透明标题栏占位：为系统红绿灯/窗口标题预留顶部区域，
+         并使面板显隐按钮不再压在大纲/侧栏的标题行上（按钮 fixed 在 top-0，本占位条把主内容整体下移） -->
+    <div v-if="isMac" class="h-7 flex-shrink-0"></div>
+
+    <TitleBar
+      v-if="!isMac"
+      :is-sidebar-open="isSidebarOpen"
+      :is-outline-open="isOutlineOpen"
+      @toggle-sidebar="toggleSidebar"
+      @toggle-outline="toggleOutline"
+    />
+
+    <!-- macOS 无自定义标题栏（走系统原生菜单/红绿灯），单独在右上角放置面板显隐按钮 -->
+    <div
+      v-if="isMac"
+      class="fixed top-0 right-1 z-50 flex items-center h-7 transition-opacity duration-300"
+      :class="{ 'opacity-0 pointer-events-none': settingsStore.isFocusMode }"
+    >
+      <PanelToggleButtons
+        :is-sidebar-open="isSidebarOpen"
+        :is-outline-open="isOutlineOpen"
+        @toggle-sidebar="toggleSidebar"
+        @toggle-outline="toggleOutline"
+      />
+    </div>
 
     <div
       class="toolbar-container transition-opacity duration-300"
@@ -362,6 +389,7 @@ onUnmounted(() => {
           大纲
         </div>
         <SidebarOutlinePanel
+          :doc-id="fileStore.currentFile.path || ('new-' + newDocSeq)"
           :items="outlineItems"
           @scroll-to="scrollToHeading"
         />

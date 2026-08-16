@@ -1,6 +1,7 @@
 <template>
   <div
     class="editor-shell h-full w-full cursor-text transition-colors"
+    :class="{ 'editor-line-numbers': settingsStore.settings.showLineNumbers }"
     style="background-color: var(--bg-color)"
     @click="handleContainerClick"
   >
@@ -51,6 +52,7 @@ import { handleEditorImageDrop, isEditorImageDragOver } from './tiptap/editor-im
 import { handleEditorImagePaste, isPastedImage } from './tiptap/editor-image-paste';
 import { useEditorAppearance } from './tiptap/useEditorAppearance';
 import { useEditorSearch } from './tiptap/useEditorSearch';
+import { useSettingsStore } from '../../stores/settings';
 import BubbleMenuComponent from './views/BubbleMenu.vue';
 import SlashMenu from './views/SlashMenu.vue';
 import SearchBar from './SearchBar.vue';
@@ -69,6 +71,7 @@ const props = defineProps<{ initialContent?: string }>();
 const emit = defineEmits<{ (e: 'update', data: EditorUpdatePayload): void }>();
 
 const fileStore = useFileStore();
+const settingsStore = useSettingsStore();
 const editorWrapRef = ref<HTMLElement | null>(null);
 const bubbleMenuRef = ref<InstanceType<typeof BubbleMenuComponent> | null>(null);
 const searchBarRef = ref<InstanceType<typeof SearchBar> | null>(null);

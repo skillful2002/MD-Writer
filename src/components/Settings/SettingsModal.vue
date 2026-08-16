@@ -14,7 +14,10 @@ import ShortcutSettingsPanel from './ShortcutSettingsPanel.vue';
 import { useShortcutSettings } from './useShortcutSettings';
 
 const settingsStore = useSettingsStore();
-const settings = settingsStore.settings;
+// 注意：必须直接绑定到 store 的响应式 settings 对象，不能抓取快照。
+// 否则 loadSettingsFromStore 之后 this.settings 被整体替换，这里的 settings
+// 仍指向旧对象，切换开关不会写回 store，导致编辑器/大纲等读取失效。
+const settings = computed(() => settingsStore.settings);
 
 // 当前选中的设置分组
 const activeTab = ref<SettingsTabKey>('appearance');
@@ -32,7 +35,7 @@ const {
   setCaptureInputRef,
   cancelEdit,
   captureKeydown,
-} = useShortcutSettings(settings);
+} = useShortcutSettings(settings.value);
 
 const tabMeta = {
   appearance: {
