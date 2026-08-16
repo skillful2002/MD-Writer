@@ -20,7 +20,6 @@ import Sidebar from './components/Editor/Sidebar.vue';
 import SourceEditorView from './components/Editor/SourceEditorView.vue';
 import StatusBar from './components/Layout/StatusBar.vue';
 import TitleBar from './components/Layout/TitleBar.vue';
-import PanelToggleButtons from './components/Layout/PanelToggleButtons.vue';
 import SettingsModal from './components/Settings/SettingsModal.vue';
 import EditorToolbar from './components/Toolbar/EditorToolbar.vue';
 import SidebarOutlinePanel from './components/Editor/SidebarOutlinePanel.vue';
@@ -30,7 +29,6 @@ import { useRecentFoldersStore } from './stores/recentFolders';
 import { message } from './services/tauri/dialog';
 import { findCommandByShortcut } from './utils/shortcuts';
 import { dirname } from './utils/path';
-import { isMac } from './utils/platform';
 import pkg from '../package.json';
 
 const MarkdownEditor = defineAsyncComponent(() => import('./components/Editor/MarkdownEditor.vue'));
@@ -61,6 +59,14 @@ const documentSession = useDocumentSession({
 
 async function handleOpenFile(path: string) {
   await documentSession.openDocumentWithPrompt(path);
+}
+
+// 源码模式：把文本区的光标位置（行/列）同步到状态栏
+function handleSourceCursor(payload: { line: number; col: number; selectionText: string }) {
+  handleEditorUpdate({
+    cursor: { line: payload.line, col: payload.col },
+    selectionText: payload.selectionText,
+  });
 }
 
 const workspaceSession = useWorkspaceSession({
@@ -108,6 +114,15 @@ const {
   openShortcutsModal,
   showImagePasteWarning,
 } = useAppUiState();
+
+// 标题栏中央显示的文件名（macOS Overlay 模式下 native titlebar 文本不再可见，
+// 需要在 HTML TitleBar 中画文件名替代显示）
+const titleBarFileTitle = computed(() => {
+  const path = fileStore.currentFile.path;
+  if (!path) return '未命名';
+  const parts = path.split(/[/\\]/).filter(Boolean);
+  return parts[parts.length - 1] ?? path;
+});
 
 function folderNameFromPath(path: string): string {
   const parts = path.split(/[/\\]/).filter(Boolean);
@@ -284,28 +299,12 @@ onUnmounted(() => {
     style="background-color: var(--bg-color); color: var(--text-color)"
   >
     <TitleBar
-      v-if="!isMac"
       :is-sidebar-open="isSidebarOpen"
       :is-outline-open="isOutlineOpen"
+      :file-title="titleBarFileTitle"
       @toggle-sidebar="toggleSidebar"
       @toggle-outline="toggleOutline"
     />
-
-    <!-- macOS 无自定义标题栏（走系统原生红绿灯/菜单），文件名由原生标题栏显示。
-         两个面板显隐按钮置于右上角，与大刚标题所在行对齐；无论大纲是否隐藏都常显 -->
-    <div
-      v-if="isMac"
-      class="fixed top-0 right-0 z-50 flex items-center h-8 transition-opacity duration-300"
-      :class="{ 'opacity-0 pointer-events-none': settingsStore.isFocusMode }"
-      data-tauri-no-drag
-    >
-      <PanelToggleButtons
-        :is-sidebar-open="isSidebarOpen"
-        :is-outline-open="isOutlineOpen"
-        @toggle-sidebar="toggleSidebar"
-        @toggle-outline="toggleOutline"
-      />
-    </div>
 
     <div
       class="toolbar-container transition-opacity duration-300"
@@ -372,6 +371,7 @@ onUnmounted(() => {
           v-else
           :content="fileStore.currentFile.content"
           @update-content="fileStore.setContent"
+          @cursor="handleSourceCursor"
         />
       </main>
 
@@ -380,12 +380,6 @@ onUnmounted(() => {
         class="w-64 flex-shrink-0 flex flex-col border-l transition-all duration-300"
         style="background-color: var(--sidebar-bg); border-color: var(--border-color)"
       >
-        <div
-          class="flex-shrink-0 px-4 py-2 text-xs font-semibold border-b"
-          style="border-color: var(--border-color); color: var(--text-color)"
-        >
-          大纲
-        </div>
         <SidebarOutlinePanel
           :doc-id="fileStore.currentFile.path || ('new-' + newDocSeq)"
           :items="outlineItems"

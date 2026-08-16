@@ -44,10 +44,10 @@ import {
 import { createEditorExtensions, type SlashMenuController } from './tiptap/editor-extensions';
 import {
   extractEditorOutline,
-  getEditorCursorInfo,
   getEditorWordCount,
   type EditorOutlineItem,
 } from './tiptap/editor-metadata';
+import { getSourceCursor } from './tiptap/markdown/serializer';
 import { handleEditorImageDrop, isEditorImageDragOver } from './tiptap/editor-image-drop';
 import { handleEditorImagePaste, isPastedImage } from './tiptap/editor-image-paste';
 import { useEditorAppearance } from './tiptap/useEditorAppearance';
@@ -162,7 +162,13 @@ const debouncedUpdate = debounce((ed: TiptapEditor) => {
 }, 300);
 
 function emitCursorInfo(ed: TiptapEditor) {
-  emit('update', getEditorCursorInfo(ed));
+  const { from } = ed.state.selection;
+  const { line, col } = getSourceCursor(ed.state.doc, from);
+  const selection = ed.state.selection;
+  const selectionText = selection.empty
+    ? ''
+    : ed.state.doc.textBetween(selection.from, selection.to, '\n');
+  emit('update', { cursor: { line, col }, selectionText });
 }
 
 // ── BubbleMenu ────────────────────────────────────────────────

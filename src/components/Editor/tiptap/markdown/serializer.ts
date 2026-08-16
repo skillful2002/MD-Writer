@@ -14,10 +14,39 @@ export class MarkdownSerializerState {
   private closed: PMNode | null = null;
   private inTightList = false;
 
+  // ── 源码行号 / 位置映射（供编辑器行号栏与状态栏光标使用）──
+  /** 当前源码行（1-based），写入换行时自增 */
+  lineCount = 1;
+  /** 每个顶层块在源码中的起始行（1-based） */
+  blockLineStarts: number[] = [];
+  /** 当前正在序列化节点的绝对 PM 位置（顶层块从 1 开始） */
+  activeAbsPos = 0;
+  /** 文本字符 → 源码偏移映射：PM 位置（升序） */
+  pmPositions: number[] = [];
+  /** 对应的源码字符偏移 */
+  srcOffsets: number[] = [];
+
+  /** 统一追加输出并维护行计数 */
+  private append(text: string) {
+    this.output += text;
+    if (text.length) {
+      let nl = 0;
+      for (let i = 0; i < text.length; i++) {
+        if (text.charCodeAt(i) === 10) nl++;
+      }
+      this.lineCount += nl;
+    }
+  }
+
+  /** 记录当前顶层块的源码起始行 */
+  recordBlockStart() {
+    this.blockLineStarts.push(this.lineCount);
+  }
+
   /** 写入文本 */
   write(text: string) {
     this.flushClose();
-    this.output += text;
+    this.append(text);
   }
 
   /** 写入一行（末尾加换行） */
@@ -28,7 +57,7 @@ export class MarkdownSerializerState {
   /** 确保输出以换行结尾 */
   ensureNewline() {
     if (this.output.length && !this.output.endsWith('\n')) {
-      this.output += '\n';
+      this.append('\n');
     }
   }
 
@@ -41,7 +70,7 @@ export class MarkdownSerializerState {
     if (!this.closed) return;
     this.closed = null;
     this.ensureNewline();
-    for (let i = 0; i < extra; i++) this.output += '\n';
+    for (let i = 0; i < extra; i++) this.append('\n');
   }
 
   /** 增加空行分隔 */
@@ -49,17 +78,25 @@ export class MarkdownSerializerState {
     this.flushClose();
     this.ensureNewline();
     if (!this.output.endsWith('\n\n')) {
-      this.output += '\n';
+      this.append('\n');
     }
   }
 
-  /** 序列化 inline 内容 */
+  /** 序列化 inline 内容（position 映射基于当前节点的 activeAbsPos） */
   renderInline(parent: PMNode) {
-    parent.forEach((child, _offset, index) => {
+    const parentContentStart = this.activeAbsPos + 1;
+    parent.forEach((child, offset, index) => {
       if (child.isText) {
         this.renderMarks(child, parent, index, true);
         const hasCodeMark = child.marks.some((mark) => mark.type.name === 'code');
-        this.write(hasCodeMark ? (child.text ?? '') : this.escapeInline(child.text ?? ''));
+        const text = hasCodeMark ? (child.text ?? '') : this.escapeInline(child.text ?? '');
+        // 逐字符记录 PM 位置 → 源码偏移
+        const base = parentContentStart + offset;
+        for (let i = 0; i < text.length; i++) {
+          this.pmPositions.push(base + i);
+          this.srcOffsets.push(this.output.length);
+          this.append(text[i]);
+        }
         this.renderMarks(child, parent, index, false);
       } else {
         this.renderMarks(child, parent, index, true);
@@ -125,7 +162,8 @@ export class MarkdownSerializerState {
   }
 
   /** 序列化节点 */
-  renderNode(node: PMNode) {
+  renderNode(node: PMNode, absPos?: number) {
+    if (absPos !== undefined) this.activeAbsPos = absPos;
     const handler = nodeSerializers[node.type.name];
     if (handler) {
       handler(this, node);
@@ -140,16 +178,19 @@ export class MarkdownSerializerState {
     }
   }
 
-  /** 递归序列化子节点 */
+  /** 递归序列化子节点（父子位置由 activeAbsPos 推导，无需额外参数） */
   renderContent(parent: PMNode) {
-    parent.forEach((child, _offset, index) => {
+    const parentAbsPos = this.activeAbsPos;
+    parent.forEach((child, offset, index) => {
       if (index > 0) {
         // 块级节点之间插入空行
         if (child.isBlock) {
           this.blankLine();
         }
       }
-      this.renderNode(child);
+      const childAbsPos = parentAbsPos + 1 + offset;
+      this.activeAbsPos = childAbsPos;
+      this.renderNode(child, childAbsPos);
     });
   }
 
@@ -157,10 +198,13 @@ export class MarkdownSerializerState {
   renderList(node: PMNode, getDelim: (index: number, node: PMNode) => string) {
     const prevTight = this.inTightList;
     this.inTightList = true;
-    node.forEach((child, _offset, index) => {
+    const listAbsPos = this.activeAbsPos;
+    node.forEach((child, offset, index) => {
       if (index > 0) this.ensureNewline();
       const delim = getDelim(index, child);
       this.write(delim);
+      const childAbsPos = listAbsPos + 1 + offset;
+      this.activeAbsPos = childAbsPos;
       this.renderContent(child);
     });
     this.inTightList = prevTight;
@@ -232,7 +276,14 @@ const nodeSerializers: Record<string, NodeSerializer> = {
   codeBlock(state, node) {
     const lang = node.attrs.language || '';
     state.writeLine('```' + lang);
-    state.writeLine(node.textContent);
+    // 记录代码内容的 PM→源码位置映射
+    const code = node.textContent;
+    const base = state.activeAbsPos + 1;
+    for (let i = 0; i < code.length; i++) {
+      state.pmPositions.push(base + i);
+      state.srcOffsets.push(state.output.length);
+      state.write(code[i]);
+    }
     state.writeLine('```');
     state.closeBlock(node);
   },
@@ -324,11 +375,119 @@ function escapeLinkTitle(title: string): string {
 
 // ── 导出 ─────────────────��────────────��───────────────────────
 
-export function serializeMarkdown(doc: PMNode): string {
+export interface SourceMap {
+  /** 序列化后的 Markdown 原文 */
+  markdown: string;
+  /** 文本字符的 PM 位置（升序） */
+  pmPositions: number[];
+  /** 对应的源码字符偏移 */
+  srcOffsets: number[];
+  /** 每个顶层块在源码中的起始行（1-based） */
+  blockLineStarts: number[];
+}
+
+// 按 doc 引用缓存序列化结果，避免每次选区变化都重算
+let cachedDoc: PMNode | null = null;
+let cachedMap: SourceMap | null = null;
+
+export function serializeWithMap(doc: PMNode): SourceMap {
+  if (cachedDoc === doc && cachedMap) return cachedMap;
   const state = new MarkdownSerializerState();
-  state.renderNode(doc);
+  // 顶层子节点绝对位置 = offset（doc 的有效位置为 -1，故 -1 + 1 + offset = offset）
+  doc.forEach((child, offset, index) => {
+    if (index > 0) state.blankLine();
+    state.recordBlockStart();
+    state.renderNode(child, offset);
+  });
   let output = state.output;
   // 确保文件以单个换行结尾
   output = output.replace(/\n*$/, '\n');
-  return output;
+  const result: SourceMap = {
+    markdown: output,
+    pmPositions: state.pmPositions,
+    srcOffsets: state.srcOffsets,
+    blockLineStarts: state.blockLineStarts,
+  };
+  cachedDoc = doc;
+  cachedMap = result;
+  return result;
+}
+
+export function serializeMarkdown(doc: PMNode): string {
+  return serializeWithMap(doc).markdown;
+}
+
+/** 返回每个顶层块在源码中的起始行（1-based） */
+export function getBlockLineStarts(doc: PMNode): number[] {
+  return serializeWithMap(doc).blockLineStarts;
+}
+
+/** 二分查找：不大于 from 的最大 PM 位置对应的源码偏移；无匹配返回 -1 */
+function findSrcOffset(pmPos: number[], srcOff: number[], from: number): number {
+  let lo = 0;
+  let hi = pmPos.length - 1;
+  let ans = -1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (pmPos[mid] <= from) {
+      ans = mid;
+      lo = mid + 1;
+    } else {
+      hi = mid - 1;
+    }
+  }
+  if (ans < 0) return -1;
+  return srcOff[ans] + (from - pmPos[ans]);
+}
+
+/** 由源码偏移计算 1-based 行/列 */
+function offsetToLineCol(markdown: string, srcOffset: number): { line: number; col: number } {
+  const before = markdown.slice(0, srcOffset);
+  const line = before.split('\n').length;
+  const lastNl = before.lastIndexOf('\n');
+  const col = srcOffset - lastNl;
+  return { line, col };
+}
+
+/**
+ * 计算光标在源码（.md 文件）中的行/列。
+ * 段落、标题、列表、代码块等核心块精确映射；
+ * 引用块/标注/公式/表格等未逐一映射的块回退为「块起始行 + 列 1」。
+ */
+const MAPPED_BLOCK_TYPES = new Set([
+  'paragraph',
+  'heading',
+  'bulletList',
+  'orderedList',
+  'taskList',
+  'codeBlock',
+]);
+
+export function getSourceCursor(
+  doc: PMNode,
+  from: number,
+): { line: number; col: number } {
+  const { markdown, pmPositions, srcOffsets, blockLineStarts } = serializeWithMap(doc);
+
+  // 定位包含光标的顶层块及其类型
+  let blockIndex = 0;
+  let blockType = '';
+  doc.forEach((node, offset, index) => {
+    const start = 1 + offset;
+    const end = start + node.nodeSize;
+    if (from >= start && from <= end) {
+      blockIndex = index;
+      blockType = node.type.name;
+    }
+  });
+
+  if (MAPPED_BLOCK_TYPES.has(blockType)) {
+    const srcOffset = findSrcOffset(pmPositions, srcOffsets, from);
+    if (srcOffset >= 0) {
+      return offsetToLineCol(markdown, srcOffset);
+    }
+  }
+
+  // 回退：使用包含光标的顶层块的源码起始行
+  return { line: blockLineStarts[blockIndex] ?? 1, col: 1 };
 }

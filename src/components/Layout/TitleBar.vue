@@ -1,6 +1,7 @@
 <template>
   <div
-    class="titlebar select-none flex items-center justify-between h-9 border-b transition-colors"
+    class="titlebar select-none flex items-center h-9 border-b transition-colors"
+    :class="isMac ? 'pl-20 pr-2' : 'pl-2 justify-between'"
     style="
       background-color: var(--bg-color);
       color: var(--text-color);
@@ -8,7 +9,8 @@
     "
     data-tauri-drag-region
   >
-    <div class="flex items-center h-full pl-2 space-x-1">
+    <!-- 左：logo + HTML 菜单（仅 Win/Linux；Mac 走系统菜单栏） -->
+    <div v-if="!isMac" class="flex items-center h-full space-x-1">
       <img src="/icon.png" class="w-4 h-4 mr-2" alt="Logo" />
 
       <div class="flex items-center h-full" data-tauri-no-drag>
@@ -53,7 +55,17 @@
       </div>
     </div>
 
-    <div class="flex items-center h-full" data-tauri-no-drag>
+    <!-- 中：macOS 文件名（替代 Overlay 模式下不再可见的 native titlebar 文本） -->
+    <div
+      v-if="isMac"
+      class="flex-1 text-center text-xs truncate px-3"
+      data-tauri-no-drag
+    >
+      {{ fileTitle || '未命名' }}
+    </div>
+
+    <!-- 右：面板切换按钮 + 窗口控制按钮（窗口按钮仅 Win/Linux，Mac 用系统红绿灯） -->
+    <div class="flex items-center h-full ml-auto" data-tauri-no-drag>
       <PanelToggleButtons
         :is-sidebar-open="isSidebarOpen"
         :is-outline-open="isOutlineOpen"
@@ -61,12 +73,12 @@
         @toggle-outline="$emit('toggle-outline')"
       />
 
-      <div class="control-btn hover:bg-black/5" @click="minimize">
+      <div v-if="!isMac" class="control-btn hover:bg-black/5" @click="minimize">
         <svg class="w-3 h-3" viewBox="0 0 12 12">
           <rect fill="currentColor" width="10" height="1" x="1" y="6" />
         </svg>
       </div>
-      <div class="control-btn hover:bg-black/5" @click="toggleMaximize">
+      <div v-if="!isMac" class="control-btn hover:bg-black/5" @click="toggleMaximize">
         <svg class="w-3 h-3" viewBox="0 0 12 12">
           <rect
             fill="currentColor"
@@ -80,7 +92,11 @@
           />
         </svg>
       </div>
-      <div class="control-btn hover:bg-red-500 hover:text-white group" @click="close">
+      <div
+        v-if="!isMac"
+        class="control-btn hover:bg-red-500 hover:text-white group"
+        @click="close"
+      >
         <svg class="w-3 h-3" viewBox="0 0 12 12">
           <path
             fill="currentColor"
@@ -106,6 +122,7 @@ import { formatShortcutDisplay } from '../../utils/shortcuts';
 import { useSettingsStore } from '../../stores/settings';
 import { emitMenuEvent, emitWindowCloseRequested } from '../../services/tauri/events';
 import { minimizeCurrentWindow, toggleCurrentWindowMaximize } from '../../services/tauri/window';
+import { isMac } from '../../utils/platform';
 import PanelToggleButtons from './PanelToggleButtons.vue';
 
 const activeMenu = ref<string | null>(null);
@@ -115,6 +132,7 @@ const settingsStore = useSettingsStore();
 defineProps<{
   isSidebarOpen: boolean;
   isOutlineOpen: boolean;
+  fileTitle?: string;
 }>();
 
 defineEmits<{

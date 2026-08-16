@@ -1070,11 +1070,22 @@ html.dark .tiptap-editor .search-match-current {
 
 /* ── 行号（由设置 showLineNumbers 控制，.editor-line-numbers 时启用）──
  * 采用 CSS counter：每个顶层 block 递增一个行号，符合 Markdown 编辑器惯例。
+ * 行号列紧贴编辑区最左侧、窄列（约 4 位数宽），数字右对齐（用 decimal-leading-zero
+ * 让 1–99 都是 2 字符宽，左右边缘同时对齐）。
+ * 标题块的行号用 ::after 渲染在窄列里，与正文 ::before 共用同一列；H 徽标走基础
+ * ::before 留在 heading gutter 里。这样所有块类型的数字 x 坐标严格一致。
  * 嵌套列表项不计入独立行号（已知简化）。
  */
 .editor-line-numbers .tiptap-editor {
+  /* 约 4 位 monospace 数字（0.72rem × 0.6em × 4）的列宽 */
+  --mk-line-number-width: 1.85rem;
   counter-reset: linenumber;
-  padding-left: calc(var(--mk-heading-gutter-width) + 2.75rem);
+  padding-left: calc(var(--mk-heading-gutter-width) + var(--mk-line-number-width));
+}
+
+/* 关闭 mk-editor 的左侧内边距，让行号紧贴编辑区最左边 */
+.editor-line-numbers .mk-editor {
+  padding-left: 0;
 }
 
 .editor-line-numbers .tiptap-editor > * {
@@ -1082,13 +1093,15 @@ html.dark .tiptap-editor .search-match-current {
   counter-increment: linenumber;
 }
 
-/* 非标题块：行号放在左侧行号列 */
+/* 非标题块：行号放在最左侧窄列，用 flex 右对齐 */
 .editor-line-numbers .tiptap-editor > *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6)::before {
-  content: counter(linenumber);
+  content: counter(linenumber, decimal-leading-zero);
   position: absolute;
-  left: calc(-1 * var(--mk-heading-gutter-width) - 2.5rem);
-  width: 2.25rem;
-  text-align: right;
+  left: calc(-1 * (var(--mk-heading-gutter-width) + var(--mk-line-number-width)));
+  width: var(--mk-line-number-width);
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
   color: var(--muted-color);
   font-family: var(--font-mono);
   font-size: 0.72rem;
@@ -1097,46 +1110,27 @@ html.dark .tiptap-editor .search-match-current {
   user-select: none;
 }
 
-/* 标题块：复用既有 H1..H6 徽标 ::before，把行号拼到左侧，
-   保持右对齐使其中的 "H1" 仍落在原徽标位置 */
-.editor-line-numbers .tiptap-editor h1::before {
-  left: calc(-1 * (var(--mk-heading-gutter-width) + 2.75rem));
-  width: calc(var(--mk-heading-gutter-width) + 2.5rem);
-  text-align: right;
-  content: counter(linenumber) "  " "H1";
-}
-
-.editor-line-numbers .tiptap-editor h2::before {
-  left: calc(-1 * (var(--mk-heading-gutter-width) + 2.75rem));
-  width: calc(var(--mk-heading-gutter-width) + 2.5rem);
-  text-align: right;
-  content: counter(linenumber) "  " "H2";
-}
-
-.editor-line-numbers .tiptap-editor h3::before {
-  left: calc(-1 * (var(--mk-heading-gutter-width) + 2.75rem));
-  width: calc(var(--mk-heading-gutter-width) + 2.5rem);
-  text-align: right;
-  content: counter(linenumber) "  " "H3";
-}
-
-.editor-line-numbers .tiptap-editor h4::before {
-  left: calc(-1 * (var(--mk-heading-gutter-width) + 2.75rem));
-  width: calc(var(--mk-heading-gutter-width) + 2.5rem);
-  text-align: right;
-  content: counter(linenumber) "  " "H4";
-}
-
-.editor-line-numbers .tiptap-editor h5::before {
-  left: calc(-1 * (var(--mk-heading-gutter-width) + 2.75rem));
-  width: calc(var(--mk-heading-gutter-width) + 2.5rem);
-  text-align: right;
-  content: counter(linenumber) "  " "H5";
-}
-
-.editor-line-numbers .tiptap-editor h6::before {
-  left: calc(-1 * (var(--mk-heading-gutter-width) + 2.75rem));
-  width: calc(var(--mk-heading-gutter-width) + 2.5rem);
-  text-align: right;
-  content: counter(linenumber) "  " "H6";
+/* 标题块：行号走 ::after，共用上面那个窄列（与正文 ::before 同一 x）；
+   H 徽标走基础 ::before，留 heading gutter 原位不动。 */
+.editor-line-numbers .tiptap-editor h1::after,
+.editor-line-numbers .tiptap-editor h2::after,
+.editor-line-numbers .tiptap-editor h3::after,
+.editor-line-numbers .tiptap-editor h4::after,
+.editor-line-numbers .tiptap-editor h5::after,
+.editor-line-numbers .tiptap-editor h6::after {
+  content: counter(linenumber, decimal-leading-zero);
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  left: calc(-1 * (var(--mk-heading-gutter-width) + var(--mk-line-number-width)));
+  width: var(--mk-line-number-width);
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  color: var(--muted-color);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  opacity: 0.5;
+  pointer-events: none;
+  user-select: none;
 }
