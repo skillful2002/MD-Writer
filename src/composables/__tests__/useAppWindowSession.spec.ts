@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
 import { APP_EVENT_NAMES } from '../../services/tauri/event-names';
 
-const confirmMock = vi.fn();
+const messageMock = vi.fn();
 const consumeStartupOpenRequestMock = vi.fn();
 const consumeWindowOpenRequestMock = vi.fn();
 const destroyCurrentWindowMock = vi.fn();
@@ -25,7 +25,7 @@ function createListenerMock(eventName: string) {
 }
 
 vi.mock('../../services/tauri/dialog', () => ({
-  confirm: confirmMock,
+  message: messageMock,
 }));
 
 vi.mock('../../services/tauri/webview', () => ({
@@ -63,7 +63,7 @@ vi.mock('vue', async () => {
 describe('useAppWindowSession', () => {
   beforeEach(() => {
     listeners.clear();
-    confirmMock.mockReset();
+    messageMock.mockReset();
     consumeStartupOpenRequestMock.mockReset();
     consumeWindowOpenRequestMock.mockReset();
     destroyCurrentWindowMock.mockReset();
@@ -134,7 +134,7 @@ describe('useAppWindowSession', () => {
     const saveDocument = vi.fn().mockResolvedValue(true);
     consumeStartupOpenRequestMock.mockResolvedValue(null);
     consumeWindowOpenRequestMock.mockResolvedValue(null);
-    confirmMock.mockResolvedValueOnce(true);
+    messageMock.mockResolvedValueOnce('保存');
 
     const { useAppWindowSession } = await import('../useAppWindowSession');
     const session = useAppWindowSession({
@@ -148,6 +148,28 @@ describe('useAppWindowSession', () => {
     await listeners.get(APP_EVENT_NAMES.windowCloseRequested)?.(null);
 
     expect(saveDocument).toHaveBeenCalled();
+    expect(saveAllWindowStateMock).toHaveBeenCalled();
+    expect(destroyCurrentWindowMock).toHaveBeenCalled();
+  });
+
+  it('discards and closes after close request chooses not to save', async () => {
+    const saveDocument = vi.fn();
+    consumeStartupOpenRequestMock.mockResolvedValue(null);
+    consumeWindowOpenRequestMock.mockResolvedValue(null);
+    messageMock.mockResolvedValueOnce('不保存');
+
+    const { useAppWindowSession } = await import('../useAppWindowSession');
+    const session = useAppWindowSession({
+      openDocument: vi.fn(),
+      saveDocument,
+      isDirty: () => true,
+      windowTitle: ref('Dirty'),
+    });
+
+    await session.setup();
+    await listeners.get(APP_EVENT_NAMES.windowCloseRequested)?.(null);
+
+    expect(saveDocument).not.toHaveBeenCalled();
     expect(saveAllWindowStateMock).toHaveBeenCalled();
     expect(destroyCurrentWindowMock).toHaveBeenCalled();
   });
