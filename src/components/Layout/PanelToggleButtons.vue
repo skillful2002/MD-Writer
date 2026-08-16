@@ -1,9 +1,10 @@
 <template>
-  <div class="panel-toggle-group flex items-center h-full">
+  <div class="panel-toggle-group flex items-center h-full gap-0.5" data-tauri-no-drag>
     <!-- 文件列表（侧边栏）显隐切换 -->
     <button
       type="button"
       class="title-toggle"
+      data-tauri-no-drag
       :class="isSidebarOpen ? 'title-toggle--on' : 'title-toggle--off'"
       :title="isSidebarOpen ? '隐藏文件列表' : '显示文件列表'"
       @click="$emit('toggle-sidebar')"
@@ -27,6 +28,7 @@
     <button
       type="button"
       class="title-toggle"
+      data-tauri-no-drag
       :class="isOutlineOpen ? 'title-toggle--on' : 'title-toggle--off'"
       :title="isOutlineOpen ? '隐藏大纲' : '显示大纲'"
       @click="$emit('toggle-outline')"

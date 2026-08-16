@@ -283,10 +283,6 @@ onUnmounted(() => {
     :class="{ 'focus-mode': settingsStore.isFocusMode }"
     style="background-color: var(--bg-color); color: var(--text-color)"
   >
-    <!-- macOS 透明标题栏占位：为系统红绿灯/窗口标题预留顶部区域，
-         并使面板显隐按钮不再压在大纲/侧栏的标题行上（按钮 fixed 在 top-0，本占位条把主内容整体下移） -->
-    <div v-if="isMac" class="h-7 flex-shrink-0"></div>
-
     <TitleBar
       v-if="!isMac"
       :is-sidebar-open="isSidebarOpen"
@@ -295,11 +291,13 @@ onUnmounted(() => {
       @toggle-outline="toggleOutline"
     />
 
-    <!-- macOS 无自定义标题栏（走系统原生菜单/红绿灯），单独在右上角放置面板显隐按钮 -->
+    <!-- macOS 无自定义标题栏（走系统原生红绿灯/菜单），文件名由原生标题栏显示。
+         两个面板显隐按钮置于右上角，与大刚标题所在行对齐；无论大纲是否隐藏都常显 -->
     <div
       v-if="isMac"
-      class="fixed top-0 right-1 z-50 flex items-center h-7 transition-opacity duration-300"
+      class="fixed top-0 right-0 z-50 flex items-center h-8 transition-opacity duration-300"
       :class="{ 'opacity-0 pointer-events-none': settingsStore.isFocusMode }"
+      data-tauri-no-drag
     >
       <PanelToggleButtons
         :is-sidebar-open="isSidebarOpen"
