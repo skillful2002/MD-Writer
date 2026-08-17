@@ -35,11 +35,11 @@ const emit = defineEmits<{
         >
           打开其他文件夹…
         </button>
-        <div class="text-[11px] text-gray-400 mb-1 px-1">最近打开的文件夹</div>
+        <div class="text-[11px] text-gray-400 mb-1 px-1 dark:text-[var(--muted-color)]">最近打开的文件夹</div>
         <button
           v-for="folder in recentFolders"
           :key="folder.path"
-          class="w-full flex items-center text-left px-2 py-1.5 rounded-md text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+          class="w-full flex items-center text-left px-2 py-1.5 rounded-md text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 dark:text-[var(--muted-color)] dark:hover:bg-[var(--active-bg)] dark:hover:text-[var(--text-color)] transition-colors"
           :title="folder.path"
           @click="emit('open-recent', folder.path)"
         >

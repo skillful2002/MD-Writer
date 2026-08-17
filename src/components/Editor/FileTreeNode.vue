@@ -30,8 +30,8 @@ const rowStyle = computed(() => {
 
 const rowClasses = computed(() =>
   props.node.path === props.currentFilePath
-    ? 'bg-blue-50 text-blue-600'
-    : 'text-gray-600 hover:bg-gray-100',
+    ? 'bg-blue-50 text-blue-600 dark:bg-[var(--active-bg)] dark:text-[var(--text-secondary)] font-medium'
+    : 'text-gray-600 hover:bg-gray-100 dark:text-[var(--muted-color)] dark:hover:bg-[var(--sidebar-hover)]',
 );
 
 const icon = computed(() => {
