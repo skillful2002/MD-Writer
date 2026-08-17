@@ -51,3 +51,4 @@ coverage/
 
 # Project data (WorkBuddy memory, local-only)
 .workbuddy/
+.codebuddy/
