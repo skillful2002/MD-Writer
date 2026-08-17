@@ -366,6 +366,18 @@ function getTokenHandlers(schema: Schema): Record<string, TokenHandler> {
   return handlers;
 }
 
+// ── 关闭围栏容错 ────────────────────────────────────────────────
+//
+// 标准 Markdown 要求结束的 ``` 独占一行（行首起、行尾仅允许空白）。
+// 若用户把内容写在了关闭围栏同一行（如 `Y.-5``` `），markdown-it 会认为
+// 代码块从未结束，从而吞掉后续所有内容，导致显示/大纲等全部错乱。
+// 这里在解析前把行尾的围栏序列拆到独立的一行，使前面的内容作为代码保留。
+function normalizeClosingFences(content: string): string {
+  // 仅匹配「同一行内」尾部带内容的关闭围栏（空格/制表符可跨，但不能跨行）。
+  // 把行尾的围栏序列拆到独立一行，使前面的内容作为代码保留。
+  return content.replace(/^(?![ \t]*`{3,})([^\n`]*\S)[ \t]*(`{3,})[ \t]*$/gm, '$1\n$2');
+}
+
 // ── 解析入口 ──────────────────────────��──────────────────────────
 
 const md = createMarkdownIt();
@@ -393,6 +405,7 @@ export function parseMarkdown(schema: Schema, content: string): PMNode {
   }
 
   // 1. 用 markdown-it 解析主体内容
+  content = normalizeClosingFences(content);
   const tokens = md.parse(content, {});
   const handlers = getTokenHandlers(schema);
   const tokenInterceptors = getPluginTokenInterceptors(schema);

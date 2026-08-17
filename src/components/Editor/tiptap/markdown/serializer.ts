@@ -284,6 +284,13 @@ const nodeSerializers: Record<string, NodeSerializer> = {
       state.srcOffsets.push(state.output.length);
       state.write(code[i]);
     }
+    // 保证关闭围栏独占一行：若代码内容不以换行结尾，补一个换行，
+    // 并将该换行映射到最后一个代码字符的 PM 位置（避免 Y.-5``` 这类畸形输出）。
+    if (code.length === 0 || !code.endsWith('\n')) {
+      state.pmPositions.push(base + Math.max(0, code.length - 1));
+      state.srcOffsets.push(state.output.length);
+      state.write('\n');
+    }
     state.writeLine('```');
     state.closeBlock(node);
   },

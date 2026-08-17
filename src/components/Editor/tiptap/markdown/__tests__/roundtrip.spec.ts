@@ -338,6 +338,44 @@ describe('Round-trip: parse → serialize', () => {
     });
   });
 
+  describe('code block closing fence tolerance', () => {
+    it('closes code block when closing fence shares a line with content', () => {
+      const schema = createTestSchema();
+      const md = '```\nhttps://lxh19990520.cn3.quickconnect.cn/\nssh lzg@218.94.105.90 -p 7599\nY.-5```\n';
+      const doc = parseMarkdown(schema, md);
+
+      // 代码块应包含最后一行内容，且后续节点不再被吞掉
+      const code = doc.child(0);
+      expect(code.type.name).toBe('codeBlock');
+      expect(code.textContent).toBe(
+        'https://lxh19990520.cn3.quickconnect.cn/\nssh lzg@218.94.105.90 -p 7599\nY.-5',
+      );
+      // 代码块之外的内容保留（这里没有，但文档结构正确闭合）
+      expect(doc.childCount).toBe(1);
+    });
+
+    it('content after malformed closing fence is not swallowed', () => {
+      const schema = createTestSchema();
+      const md = '```\nline1\nY.-5```\n\n## 后续标题\n\n正常段落\n';
+      const doc = parseMarkdown(schema, md);
+
+      expect(doc.child(0).type.name).toBe('codeBlock');
+      expect(doc.child(1).type.name).toBe('heading');
+      expect(doc.child(2).type.name).toBe('paragraph');
+      expect(doc.child(1).textContent).toBe('后续标题');
+    });
+
+    it('malformed closing fence round-trips stably without data loss', () => {
+      const md = '```\nline1\nY.-5```\n\n## 后续标题\n\n正常段落\n';
+      const once = roundTrip(md);
+      // 幂等：再次序列化结果不变（不会因规整产生循环差异）
+      expect(roundTrip(once)).toBe(once);
+      // 代码内容与后续标题均保留，且关闭围栏独占一行
+      expect(once).toContain('Y.-5\n```');
+      expect(once).toContain('后续标题');
+    });
+  });
+
   describe('edge cases', () => {
     it('empty document', () => {
       const result = roundTrip('');
