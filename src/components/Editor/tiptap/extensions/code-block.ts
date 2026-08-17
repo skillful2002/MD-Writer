@@ -9,6 +9,7 @@
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import type { Editor } from '@tiptap/core';
 import type { Node as PMNode } from '@tiptap/pm/model';
+import { TextSelection } from '@tiptap/pm/state';
 import { common, createLowlight } from 'lowlight';
 
 const lowlight = createLowlight(common);
@@ -36,7 +37,10 @@ function updateCodeBlockLanguage(
     ...node.attrs,
     language,
   });
+  // 切换语言后把光标移到代码块内容第一行开头
+  tr.setSelection(TextSelection.create(tr.doc, pos + 1));
   editor.view.dispatch(tr);
+  editor.commands.focus();
 }
 
 export const CustomCodeBlock = CodeBlockLowlight.extend({
