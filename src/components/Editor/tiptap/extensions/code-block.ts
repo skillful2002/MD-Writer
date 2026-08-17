@@ -174,7 +174,8 @@ export const CustomCodeBlock = CodeBlockLowlight.extend({
   },
 }).configure({
   lowlight,
-  defaultLanguage: null,
+  // 未指定语言时固定使用 plaintext，防止 lowlight 自动检测把 key:value 文本渲染成带颜色高亮
+  defaultLanguage: 'plaintext',
   HTMLAttributes: {
     class: 'mk-code-block',
   },
