@@ -48,3 +48,6 @@ coverage/
 
 # Gitee sync workflow (don't sync this file to Gitee)
 .github/workflows/sync-to-gitee.yml
+
+# Project data (WorkBuddy memory, local-only)
+.workbuddy/
