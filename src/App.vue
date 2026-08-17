@@ -377,7 +377,7 @@ onUnmounted(() => {
 
       <aside
         v-show="isOutlineOpen && !isSourceMode && !settingsStore.isFocusMode"
-        class="w-64 flex-shrink-0 flex flex-col border-l transition-all duration-300"
+        class="w-64 flex-shrink-0 flex flex-col border-l overflow-hidden transition-all duration-300"
         style="background-color: var(--sidebar-bg); border-color: var(--border-color)"
       >
         <SidebarOutlinePanel

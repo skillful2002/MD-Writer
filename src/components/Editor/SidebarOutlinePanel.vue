@@ -130,7 +130,7 @@ watch(() => settingsStore.settings.outlineExpanded, applyDefault);
 </script>
 
 <template>
-  <div class="flex flex-col flex-1">
+  <div class="flex flex-col flex-1 overflow-hidden">
     <!-- 大纲标题栏：标题 + 展开全部 / 收起全部 -->
     <div
       class="flex-shrink-0 flex items-center justify-between px-4 py-2 text-xs font-semibold border-b"
