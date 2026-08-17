@@ -69,8 +69,10 @@
       <PanelToggleButtons
         :is-sidebar-open="isSidebarOpen"
         :is-outline-open="isOutlineOpen"
+        :is-source-mode="isSourceMode"
         @toggle-sidebar="$emit('toggle-sidebar')"
         @toggle-outline="$emit('toggle-outline')"
+        @toggle-source="$emit('toggle-source')"
       />
 
       <div v-if="!isMac" class="control-btn hover:bg-black/5" @click="minimize">
@@ -132,12 +134,14 @@ const settingsStore = useSettingsStore();
 defineProps<{
   isSidebarOpen: boolean;
   isOutlineOpen: boolean;
+  isSourceMode: boolean;
   fileTitle?: string;
 }>();
 
 defineEmits<{
   (e: 'toggle-sidebar'): void;
   (e: 'toggle-outline'): void;
+  (e: 'toggle-source'): void;
 }>();
 
 onMounted(() => {

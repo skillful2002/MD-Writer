@@ -332,9 +332,11 @@ onUnmounted(() => {
     <TitleBar
       :is-sidebar-open="isSidebarOpen"
       :is-outline-open="isOutlineOpen"
+      :is-source-mode="isSourceMode"
       :file-title="titleBarFileTitle"
       @toggle-sidebar="toggleSidebar"
       @toggle-outline="toggleOutline"
+      @toggle-source="toggleSourceMode"
     />
 
     <div

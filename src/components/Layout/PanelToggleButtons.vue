@@ -1,5 +1,31 @@
 <template>
   <div class="panel-toggle-group flex items-center h-full gap-0.5" data-tauri-no-drag>
+    <!-- 源码显示切换 -->
+    <button
+      type="button"
+      class="title-toggle title-toggle--source"
+      data-tauri-no-drag
+      :class="isSourceMode ? 'title-toggle--on' : 'title-toggle--source-off'"
+      :title="isSourceMode ? '隐藏源码' : '显示源码'"
+      @click="$emit('toggle-source')"
+    >
+      <svg
+        viewBox="0 0 20 20"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="w-4 h-4"
+      >
+        <polyline points="7 5 3 10 7 15" />
+        <polyline points="13 5 17 10 13 15" />
+      </svg>
+    </button>
+
+    <!-- 与切换文件按钮拉开距离 -->
+    <span class="panel-toggle-spacer"></span>
+
     <!-- 文件列表（侧边栏）显隐切换 -->
     <button
       type="button"
@@ -55,11 +81,13 @@
 defineProps<{
   isSidebarOpen: boolean;
   isOutlineOpen: boolean;
+  isSourceMode: boolean;
 }>();
 
 defineEmits<{
   (e: 'toggle-sidebar'): void;
   (e: 'toggle-outline'): void;
+  (e: 'toggle-source'): void;
 }>();
 </script>
 
@@ -74,6 +102,12 @@ defineEmits<{
   @apply bg-black/5;
 }
 
+/* 源码按钮与文件列表按钮之间的间隔 */
+.panel-toggle-spacer {
+  width: 10px;
+  height: 1px;
+}
+
 /* 面板显示中：按钮高亮，图标实心感 */
 .title-toggle--on {
   background-color: color-mix(in srgb, var(--primary-color) 14%, transparent);
@@ -83,5 +117,10 @@ defineEmits<{
 /* 面板已隐藏：图标淡化并叠加斜划线 */
 .title-toggle--off {
   opacity: 0.45;
+}
+
+/* 源码按钮在非源码模式下始终清晰可见，点击进入源码模式 */
+.title-toggle--source-off {
+  opacity: 1;
 }
 </style>
