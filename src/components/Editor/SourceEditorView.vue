@@ -4,6 +4,7 @@ import { useSettingsStore } from '../../stores/settings';
 
 const props = defineProps<{
   content: string;
+  initialLine?: number | null;
 }>();
 
 const emit = defineEmits<{
@@ -47,7 +48,34 @@ function emitCursor() {
   emit('cursor', { line, col, selectionText });
 }
 
-onMounted(emitCursor);
+onMounted(() => {
+  applyInitialCursor();
+});
+
+// 切换到源码模式时，把光标恢复到编辑模式所在的源码行，并滚动该行到可视区
+function applyInitialCursor() {
+  const ta = textareaRef.value;
+  if (!ta) {
+    emitCursor();
+    return;
+  }
+  if (props.initialLine && props.initialLine >= 1) {
+    const lines = props.content.split('\n');
+    const target = Math.min(props.initialLine - 1, lines.length - 1);
+    let offset = 0;
+    for (let i = 0; i < target; i++) offset += lines[i].length + 1;
+    ta.focus({ preventScroll: true });
+    ta.setSelectionRange(offset, offset);
+    const style = getComputedStyle(ta);
+    const lineHeight = parseFloat(style.lineHeight) || 28;
+    const paddingTop = parseFloat(style.paddingTop) || 16;
+    const lineTop = paddingTop + (props.initialLine - 1) * lineHeight;
+    const topMargin = lineHeight * 2;
+    const maxScroll = Math.max(0, ta.scrollHeight - ta.clientHeight);
+    ta.scrollTop = Math.max(0, Math.min(lineTop - topMargin, maxScroll));
+  }
+  emitCursor();
+}
 </script>
 
 <template>

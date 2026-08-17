@@ -19,6 +19,8 @@ export class MarkdownSerializerState {
   lineCount = 1;
   /** 每个顶层块在源码中的起始行（1-based） */
   blockLineStarts: number[] = [];
+  /** 每个顶层块的 PM 起始位置（绝对位置，1-based） */
+  blockPmStarts: number[] = [];
   /** 当前正在序列化节点的绝对 PM 位置（顶层块从 1 开始） */
   activeAbsPos = 0;
   /** 文本字符 → 源码偏移映射：PM 位置（升序） */
@@ -38,9 +40,10 @@ export class MarkdownSerializerState {
     }
   }
 
-  /** 记录当前顶层块的源码起始行 */
-  recordBlockStart() {
+  /** 记录当前顶层块的源码起始行与 PM 起始位置 */
+  recordBlockStart(pmStart: number) {
     this.blockLineStarts.push(this.lineCount);
+    this.blockPmStarts.push(pmStart);
   }
 
   /** 写入文本 */
@@ -391,6 +394,8 @@ export interface SourceMap {
   srcOffsets: number[];
   /** 每个顶层块在源码中的起始行（1-based） */
   blockLineStarts: number[];
+  /** 每个顶层块的 PM 起始位置（绝对位置，1-based），供未记录文本位置的块（引用/表格等）回退定位 */
+  blockPmStarts: number[];
 }
 
 // 按 doc 引用缓存序列化结果，避免每次选区变化都重算
@@ -403,7 +408,7 @@ export function serializeWithMap(doc: PMNode): SourceMap {
   // 顶层子节点绝对位置 = offset（doc 的有效位置为 -1，故 -1 + 1 + offset = offset）
   doc.forEach((child, offset, index) => {
     if (index > 0) state.blankLine();
-    state.recordBlockStart();
+    state.recordBlockStart(1 + offset);
     state.renderNode(child, offset);
   });
   let output = state.output;
@@ -414,6 +419,7 @@ export function serializeWithMap(doc: PMNode): SourceMap {
     pmPositions: state.pmPositions,
     srcOffsets: state.srcOffsets,
     blockLineStarts: state.blockLineStarts,
+    blockPmStarts: state.blockPmStarts,
   };
   cachedDoc = doc;
   cachedMap = result;
@@ -497,4 +503,26 @@ export function getSourceCursor(
 
   // 回退：使用包含光标的顶层块的源码起始行
   return { line: blockLineStarts[blockIndex] ?? 1, col: 1 };
+}
+
+// 源码「行号」→ pm doc 位置：用于源码/编辑模式切换后，把光标恢复到切换前所在的源码行。
+// 优先取「目标行（含）之后第一个有文本映射的字符」对应的 pm 位置（可正确处理带前缀块：
+// 标题 `## `、列表 `- `、引用 `> `、代码围栏等，因为映射表只记录文本字符偏移）。
+// 若目标行所在块未记录文本位置（引用块/表格等），回退到该块的 PM 起始位置，
+// 保证光标落入正确块，与 getSourceCursor 的块起始行回退口径一致。
+export function lineToPmPos(map: SourceMap, targetLine: number): number {
+  const { markdown, pmPositions, srcOffsets, blockLineStarts, blockPmStarts } = map;
+  for (let i = 0; i < srcOffsets.length; i++) {
+    if (offsetToLineCol(markdown, srcOffsets[i]).line >= targetLine) {
+      return pmPositions[i];
+    }
+  }
+  for (let i = 0; i < blockLineStarts.length; i++) {
+    if (blockLineStarts[i] >= targetLine) return blockPmStarts[i];
+  }
+  return blockPmStarts.length > 0
+    ? blockPmStarts[blockPmStarts.length - 1]
+    : pmPositions.length > 0
+      ? pmPositions[pmPositions.length - 1]
+      : 0;
 }

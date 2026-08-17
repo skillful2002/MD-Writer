@@ -121,6 +121,16 @@ const {
   showImagePasteWarning,
 } = useAppUiState();
 
+// 模式切换时，把「切换前所在源码行」暂存下来，供两个视图挂载后恢复光标位置
+const pendingCursorLine = ref<number | null>(null);
+function onToggleSource() {
+  pendingCursorLine.value = stats.cursor.line;
+  toggleSourceMode();
+  nextTick(() => {
+    pendingCursorLine.value = null;
+  });
+}
+
 // 标题栏中央显示的文件名（macOS Overlay 模式下 native titlebar 文本不再可见，
 // 需要在 HTML TitleBar 中画文件名替代显示）
 const titleBarFileTitle = computed(() => {
@@ -336,7 +346,7 @@ onUnmounted(() => {
       :file-title="titleBarFileTitle"
       @toggle-sidebar="toggleSidebar"
       @toggle-outline="toggleOutline"
-      @toggle-source="toggleSourceMode"
+      @toggle-source="onToggleSource"
     />
 
     <div
@@ -349,7 +359,7 @@ onUnmounted(() => {
         @open-file="documentSession.handleOpenDocument"
         @save-file="documentSession.saveCurrentDocument"
         @toggle-sidebar="toggleSidebar"
-        @toggle-source="toggleSourceMode"
+        @toggle-source="onToggleSource"
         @copy-wechat="copyToWechat"
       />
     </div>
@@ -393,6 +403,7 @@ onUnmounted(() => {
           :key="fileStore.currentFile.path || ('new-' + newDocSeq)"
           ref="editorRef"
           :initial-content="fileStore.currentFile.content"
+          :initial-line="pendingCursorLine"
           @update="handleEditorUpdate"
         />
 
@@ -405,6 +416,7 @@ onUnmounted(() => {
         <SourceEditorView
           v-else
           :content="fileStore.currentFile.content"
+          :initial-line="pendingCursorLine"
           @update-content="fileStore.setContent"
           @cursor="handleSourceCursor"
         />

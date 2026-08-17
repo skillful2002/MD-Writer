@@ -47,7 +47,7 @@ import {
   getEditorWordCount,
   type EditorOutlineItem,
 } from './tiptap/editor-metadata';
-import { getSourceCursor } from './tiptap/markdown/serializer';
+import { getSourceCursor, serializeWithMap, lineToPmPos } from './tiptap/markdown/serializer';
 import { handleEditorImageDrop, isEditorImageDragOver } from './tiptap/editor-image-drop';
 import { handleEditorImagePaste, isPastedImage } from './tiptap/editor-image-paste';
 import { useEditorAppearance } from './tiptap/useEditorAppearance';
@@ -67,7 +67,7 @@ type EditorUpdatePayload = {
   outline?: EditorOutlineItem[];
 };
 
-const props = defineProps<{ initialContent?: string }>();
+const props = defineProps<{ initialContent?: string; initialLine?: number | null }>();
 const emit = defineEmits<{ (e: 'update', data: EditorUpdatePayload): void }>();
 
 const fileStore = useFileStore();
@@ -255,6 +255,13 @@ onMounted(() => {
     wrap.addEventListener('dragover', onEditorDragOver, true);
     wrap.addEventListener('drop', onEditorDrop, true);
   }
+  // 源码/编辑模式切换后，把光标恢复到切换前所在的源码行
+  // 同步调用：editor 已在本 onMounted 创建完成，滚动在 scrollToPosition 内部 rAF 异步完成，
+  // 避免在 App 端的 nextTick 清空 pendingCursorLine 之后才读取 props.initialLine。
+  const initialLine = props.initialLine;
+  if (initialLine && initialLine > 0) {
+    scrollToLine(initialLine);
+  }
 });
 
 onBeforeUnmount(() => {
@@ -268,50 +275,83 @@ onBeforeUnmount(() => {
   editor.value = null;
 });
 
+// ── 位置/滚动辅助 ────────────────────────────────────────────
+
+// 在 doc 中设置光标并滚动到目标位置（靠顶部留 3-4 行）
+function scrollToPosition(pos: number) {
+  if (!editor.value) return;
+  const docSize = editor.value.state.doc.content.size;
+  const target = Math.max(0, Math.min(pos, docSize));
+  const view = editor.value.view;
+  const wrap = editorWrapRef.value;
+  if (!wrap) return;
+
+  // 计算标题末尾位置，让光标停在「行尾」而不是行首
+  const heading = editor.value.state.doc.resolve(target).nodeAfter;
+  const endPos = heading ? Math.min(target + heading.nodeSize - 1, docSize) : target;
+
+  editor.value.commands.setTextSelection(endPos);
+  view.dom.focus({ preventScroll: true });
+
+  requestAnimationFrame(() => {
+    let node: HTMLElement | null = view.nodeDOM(target) as HTMLElement | null;
+    if (!(node instanceof HTMLElement)) {
+      const d = view.domAtPos(target);
+      node = d.node instanceof HTMLElement ? d.node : d.node.parentElement;
+      while (node && node !== view.dom && !/^H[1-6]$/i.test(node.tagName)) {
+        node = node.parentElement;
+      }
+    }
+    if (!(node instanceof HTMLElement) || node === view.dom) return;
+    const nodeRect = node.getBoundingClientRect();
+    const wrapRect = wrap.getBoundingClientRect();
+    const delta = nodeRect.top - wrapRect.top;
+    const lineHeight = parseFloat(getComputedStyle(view.dom).lineHeight) || nodeRect.height;
+    const topMargin = lineHeight * 3.5;
+    const maxScroll = Math.max(0, wrap.scrollHeight - wrap.clientHeight);
+    wrap.scrollTop = Math.max(0, Math.min(wrap.scrollTop + delta - topMargin, maxScroll));
+  });
+}
+
+// 把光标定位到「第 line 行」（源码行号），用于源码/编辑模式切换后保持视线
+function scrollToLine(line: number) {
+  if (!editor.value || !line || line < 1) return;
+  const doc = editor.value.state.doc;
+  const map = serializeWithMap(doc);
+  const pos = lineToPmPos(map, line);
+  const view = editor.value.view;
+  const wrap = editorWrapRef.value;
+  if (!wrap) return;
+
+  // 光标放在该行首个文本字符处（行首内容位置），而非块末尾
+  editor.value.commands.setTextSelection(pos);
+  view.dom.focus({ preventScroll: true });
+
+  requestAnimationFrame(() => {
+    // 找到 pos 所在的顶层块级 DOM 元素（其父即为 .ProseMirror）
+    const d = view.domAtPos(pos);
+    let node: Node | null = d.node;
+    if (!(node instanceof HTMLElement)) node = node.parentElement;
+    while (node && node.parentElement && node.parentElement !== view.dom) {
+      node = node.parentElement;
+    }
+    if (!(node instanceof HTMLElement) || node.parentElement !== view.dom) return;
+
+    const nodeRect = node.getBoundingClientRect();
+    const wrapRect = wrap.getBoundingClientRect();
+    const delta = nodeRect.top - wrapRect.top;
+    const lineHeight = parseFloat(getComputedStyle(view.dom).lineHeight) || nodeRect.height;
+    const topMargin = lineHeight * 2.5; // 顶部保留约 2-3 行
+    const maxScroll = Math.max(0, wrap.scrollHeight - wrap.clientHeight);
+    wrap.scrollTop = Math.max(0, Math.min(wrap.scrollTop + delta - topMargin, maxScroll));
+  });
+}
+
 // ── Expose ────────────────────────────────────────────────────
 
 defineExpose({
-  scrollToPos: (pos: number) => {
-    if (!editor.value) return;
-    const docSize = editor.value.state.doc.content.size;
-    const target = Math.max(0, Math.min(pos, docSize));
-    const view = editor.value.view;
-    const wrap = editorWrapRef.value;
-    if (!wrap) return;
-
-    // 计算标题末尾位置，让光标停在「行尾」而不是行首
-    const heading = editor.value.state.doc.resolve(target).nodeAfter;
-    const endPos = heading ? Math.min(target + heading.nodeSize - 1, docSize) : target;
-
-    // 1) 光标放到行尾；2) 聚焦中间编辑区。
-    // 用 view.dom.focus({ preventScroll: true }) 直接聚焦且不触发浏览器/PM 的自动滚动，
-    // 避免与下面「手动居中滚动」打架（Tiptap 的 focus 命令内部自带 rAF 滚动，会覆盖我们的居中）。
-    editor.value.commands.setTextSelection(endPos);
-    view.dom.focus({ preventScroll: true });
-
-    // 下一帧：等选区/聚焦后的布局真正稳定，再把标题滚到编辑区靠顶部位置（上方保留约 3-4 行空间）。
-    // 直接设置滚动容器 wrap.scrollTop（用正文字高计算顶部留白、并夹紧到可滚动范围），
-    // 只动编辑器容器，不会误滚外层祖先。
-    requestAnimationFrame(() => {
-      let node: HTMLElement | null = view.nodeDOM(target) as HTMLElement | null;
-      if (!(node instanceof HTMLElement)) {
-        const d = view.domAtPos(target);
-        node = d.node instanceof HTMLElement ? d.node : d.node.parentElement;
-        while (node && node !== view.dom && !/^H[1-6]$/i.test(node.tagName)) {
-          node = node.parentElement;
-        }
-      }
-      if (!(node instanceof HTMLElement) || node === view.dom) return;
-      const nodeRect = node.getBoundingClientRect();
-      const wrapRect = wrap.getBoundingClientRect();
-      const delta = nodeRect.top - wrapRect.top;
-      // 上方保留约 3-4 行：用编辑区正文字高 × 3.5 作为顶部留白
-      const lineHeight = parseFloat(getComputedStyle(view.dom).lineHeight) || nodeRect.height;
-      const topMargin = lineHeight * 3.5;
-      const maxScroll = Math.max(0, wrap.scrollHeight - wrap.clientHeight);
-      wrap.scrollTop = Math.max(0, Math.min(wrap.scrollTop + delta - topMargin, maxScroll));
-    });
-  },
+  scrollToPos: (pos: number) => scrollToPosition(pos),
+  scrollToLine: (line: number) => scrollToLine(line),
   getContent: () => {
     if (!editor.value) return '';
     return serializeMarkdown(editor.value.state.doc);
