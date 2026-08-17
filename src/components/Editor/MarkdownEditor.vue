@@ -9,7 +9,7 @@
       <EditorContent v-if="editor" :editor="editor" />
     </div>
 
-    <BubbleMenuComponent ref="bubbleMenuRef" :on-action="onBubbleMenuAction" />
+    <BubbleMenuComponent ref="bubbleMenuRef" :editor="editor" :on-action="onBubbleMenuAction" />
     <SlashMenu ref="slashMenuRef" :items="slashMenuItems" :command="slashMenuCommand" />
     <SearchBar
       ref="searchBarRef"
@@ -180,15 +180,19 @@ function updateBubbleMenu(ed: TiptapEditor) {
     return;
   }
   const { from, to, empty } = ed.state.selection;
-  if (empty) {
+
+  // 表格内（光标位于单元格中）：即使选区为空也弹出表格工具条
+  const inTable = ed.isActive('tableCell') || ed.isActive('tableHeader');
+  if (empty && !inTable) {
     bubbleMenuRef.value?.update(false, 0, 0, {});
     return;
   }
 
-  // 获取选区坐标
+  // 获取选区坐标（表格内用光标位置；文本选区用起止中点）
   const coords = ed.view.coordsAtPos(from);
-  const endCoords = ed.view.coordsAtPos(to);
-  const left = (coords.left + endCoords.left) / 2;
+  const left = empty
+    ? coords.left
+    : (coords.left + ed.view.coordsAtPos(to).left) / 2;
   const top = coords.top;
 
   // 检测当前 marks
@@ -202,7 +206,7 @@ function updateBubbleMenu(ed: TiptapEditor) {
   const linkAttributes = ed.getAttributes('link') as { href?: unknown };
   const linkHref = typeof linkAttributes.href === 'string' ? linkAttributes.href : undefined;
 
-  bubbleMenuRef.value?.update(true, left, top, marks, linkHref);
+  bubbleMenuRef.value?.update(true, left, top, marks, linkHref, inTable);
 }
 
 function onBubbleMenuAction(type: string, data?: BubbleMenuActionData) {

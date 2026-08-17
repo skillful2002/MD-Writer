@@ -29,6 +29,20 @@
       <button class="bubble-menu-heading-btn" @click="exec('h4')">H4</button>
     </div>
 
+    <!-- 表格工具条（光标位于表格内时显示） -->
+    <div v-if="inTable" class="bubble-menu-toolbar bubble-menu-table-bar">
+      <button class="bubble-menu-btn" title="在左侧插入列" :disabled="!can('table.addColumnBefore')" @click="exec('table.addColumnBefore')">⇤∣</button>
+      <button class="bubble-menu-btn" title="在右侧插入列" :disabled="!can('table.addColumnAfter')" @click="exec('table.addColumnAfter')">∣⇥</button>
+      <button class="bubble-menu-btn bubble-menu-btn--danger" title="删除当前列" :disabled="!can('table.deleteColumn')" @click="exec('table.deleteColumn')">✕列</button>
+      <div class="bubble-menu-divider"></div>
+      <button class="bubble-menu-btn" title="在上方插入行" :disabled="!can('table.addRowBefore')" @click="exec('table.addRowBefore')">↑行</button>
+      <button class="bubble-menu-btn" title="在下方插入行" :disabled="!can('table.addRowAfter')" @click="exec('table.addRowAfter')">↓行</button>
+      <button class="bubble-menu-btn bubble-menu-btn--danger" title="删除当前行" :disabled="!can('table.deleteRow')" @click="exec('table.deleteRow')">✕行</button>
+      <div class="bubble-menu-divider"></div>
+      <button class="bubble-menu-btn" title="切换表头列" :disabled="!can('table.toggleHeaderColumn')" @click="exec('table.toggleHeaderColumn')">⤓头列</button>
+      <button class="bubble-menu-btn" title="切换表头行" :disabled="!can('table.toggleHeaderRow')" @click="exec('table.toggleHeaderRow')">⤓头行</button>
+    </div>
+
     <!-- 链接输入区 -->
     <div v-if="showLinkInput" class="bubble-menu-link-section">
       <input
@@ -52,6 +66,8 @@
 
 <script setup lang="ts">
 import { ref, reactive, nextTick } from 'vue';
+import type { Editor as TiptapEditor } from '@tiptap/vue-3';
+import { canRunTableCommand } from '../tiptap/editor-commands';
 
 type BubbleMenuActionData = {
   href?: string;
@@ -65,17 +81,22 @@ type ActiveMarks = {
 };
 
 const props = defineProps<{
+  editor: TiptapEditor | null;
   onAction: (type: string, data?: BubbleMenuActionData) => void;
 }>();
 
 const visible = ref(false);
 const pos = reactive({ left: 0, top: 0 });
+const inTable = ref(false);
 const activeMarks = reactive({
   bold: false,
   italic: false,
   code: false,
   link: false,
 });
+
+// 表格命令可用性判断（依赖光标位于单元格内）
+const can = (commandId: string): boolean => canRunTableCommand(props.editor, commandId);
 
 // 链接输入相关
 const showLinkInput = ref(false);
@@ -125,10 +146,11 @@ const cancelLink = () => {
 
 // 暴露更新方法给插件调用
 defineExpose({
-  update(show: boolean, left: number, top: number, marks: Partial<ActiveMarks>, linkHref?: string) {
+  update(show: boolean, left: number, top: number, marks: Partial<ActiveMarks>, linkHref?: string, inTableFlag = false) {
     visible.value = show;
     pos.left = left;
     pos.top = top;
+    inTable.value = inTableFlag;
     Object.assign(activeMarks, marks);
 
     // 如果已有链接，填充 URL
@@ -163,6 +185,33 @@ defineExpose({
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+.bubble-menu-table-bar {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--border-light);
+  flex-wrap: wrap;
+}
+
+.bubble-menu-table-bar .bubble-menu-btn {
+  width: auto;
+  height: 28px;
+  padding: 0 6px;
+  font-size: 12px;
+}
+
+.bubble-menu-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.bubble-menu-btn--danger {
+  color: var(--error-color);
+}
+
+.bubble-menu-btn--danger:hover:not(:disabled) {
+  background-color: var(--error-bg);
 }
 
 .bubble-menu-btn {

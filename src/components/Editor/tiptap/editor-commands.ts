@@ -45,6 +45,59 @@ export function runBubbleMenuAction(
     case 'paragraph':
       chain.setParagraph().run();
       break;
+    // ── 表格列/行操作 ──
+    case 'table.addColumnBefore':
+      chain.addColumnBefore().run();
+      break;
+    case 'table.addColumnAfter':
+      chain.addColumnAfter().run();
+      break;
+    case 'table.deleteColumn':
+      chain.deleteColumn().run();
+      break;
+    case 'table.addRowBefore':
+      chain.addRowBefore().run();
+      break;
+    case 'table.addRowAfter':
+      chain.addRowAfter().run();
+      break;
+    case 'table.deleteRow':
+      chain.deleteRow().run();
+      break;
+    case 'table.toggleHeaderColumn':
+      chain.toggleHeaderColumn().run();
+      break;
+    case 'table.toggleHeaderRow':
+      chain.toggleHeaderRow().run();
+      break;
+  }
+}
+
+/**
+ * 查询某个表格命令当前是否可执行（光标需位于表格单元格内）。
+ * 用于在表格工具条上禁用不可用的按钮。
+ */
+export function canRunTableCommand(editor: TiptapEditor | null, commandId: string): boolean {
+  if (!editor) return false;
+  switch (commandId) {
+    case 'table.addColumnBefore':
+      return editor.can().addColumnBefore();
+    case 'table.addColumnAfter':
+      return editor.can().addColumnAfter();
+    case 'table.deleteColumn':
+      return editor.can().deleteColumn();
+    case 'table.addRowBefore':
+      return editor.can().addRowBefore();
+    case 'table.addRowAfter':
+      return editor.can().addRowAfter();
+    case 'table.deleteRow':
+      return editor.can().deleteRow();
+    case 'table.toggleHeaderColumn':
+      return editor.can().toggleHeaderColumn();
+    case 'table.toggleHeaderRow':
+      return editor.can().toggleHeaderRow();
+    default:
+      return false;
   }
 }
 
