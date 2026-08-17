@@ -5,7 +5,8 @@ import { confirm, message, open, save } from '../services/tauri/dialog';
 import type { WorkspaceChangedPayload } from '../services/tauri/events';
 import { useFileStore } from '../stores/file';
 import { useSettingsStore } from '../stores/settings';
-import { dirname } from '../utils/path';
+import { useRecentFilesStore } from '../stores/recentFiles';
+import { basename, dirname } from '../utils/path';
 
 export interface AutoSaveStatus {
   message: string;
@@ -19,6 +20,7 @@ interface DocumentSessionOptions {
 export function useDocumentSession(options: DocumentSessionOptions) {
   const fileStore = useFileStore();
   const settingsStore = useSettingsStore();
+  const recentFilesStore = useRecentFilesStore();
 
   const autoSaveStatus = ref<AutoSaveStatus | null>(null);
   const externalFileWarning = ref<string | null>(null);
@@ -63,7 +65,16 @@ export function useDocumentSession(options: DocumentSessionOptions) {
     });
   }
 
-  async function openDocumentWithPrompt(path: string) {
+  /**
+   * 记录一条「最近打开的文件」历史。
+   * 菜单直接打开（recordAsRecent=true）时立即记录；
+   * 文件列表中打开的文件只在「编辑并保存」后才记录（见 save*），这里不传该标志。
+   */
+  function recordRecentFile(path: string) {
+    recentFilesStore.add(path, basename(path));
+  }
+
+  async function openDocumentWithPrompt(path: string, recordAsRecent = false) {
     if (!(await confirmDiscardUnsavedChanges())) {
       return false;
     }
@@ -72,6 +83,9 @@ export function useDocumentSession(options: DocumentSessionOptions) {
     if (loaded) {
       clearExternalWarning();
       options.resetViewMode();
+      if (recordAsRecent) {
+        recordRecentFile(path);
+      }
     }
     return loaded;
   }
@@ -109,7 +123,8 @@ export function useDocumentSession(options: DocumentSessionOptions) {
       filters: [{ name: 'Markdown', extensions: ['md', 'markdown', 'txt'] }],
     });
     if (selected && typeof selected === 'string') {
-      await openDocumentWithPrompt(selected);
+      // 通过菜单直接打开的文件：打开即记入历史（规则 1）
+      await openDocumentWithPrompt(selected, true);
     }
   }
 
@@ -130,6 +145,8 @@ export function useDocumentSession(options: DocumentSessionOptions) {
     try {
       const result = await persistDocument(currentFile.path, force, currentFile.lastModifiedTime);
       fileStore.markSaved(result.lastModifiedMs);
+      // 编辑并保存成功的文件记入历史（规则 2：文件列表中打开后编辑保存的文件）
+      recordRecentFile(currentFile.path);
       return true;
     } catch (error) {
       const appError = normalizeTauriError(error);
@@ -170,6 +187,8 @@ export function useDocumentSession(options: DocumentSessionOptions) {
       fileStore.setFile(fileStore.currentFile.content, result.path, result.lastModifiedMs);
       fileStore.markSaved(result.lastModifiedMs);
       clearExternalWarning();
+      // 另存为后新路径记入历史
+      recordRecentFile(result.path);
       return true;
     } catch (error) {
       const appError = normalizeTauriError(error);

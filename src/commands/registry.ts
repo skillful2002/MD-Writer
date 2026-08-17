@@ -90,7 +90,7 @@ export const COMMANDS: CommandDefinition[] = [
   {
     id: 'file.clearRecent',
     title: '清除历史记录',
-    description: '清除最近打开的文件夹历史记录',
+    description: '清除最近打开的文件夹与文件历史记录',
     icon: '🧹',
     scope: 'app',
     group: 'file',

@@ -6,6 +6,7 @@ const autoSave = defineModel<boolean>('autoSave', { required: true });
 const autoSaveInterval = defineModel<number>('autoSaveInterval', { required: true });
 const recentFoldersInSidebar = defineModel<number>('recentFoldersInSidebar', { required: true });
 const recentFoldersInMenu = defineModel<number>('recentFoldersInMenu', { required: true });
+const recentFilesInSidebar = defineModel<number>('recentFilesInSidebar', { required: true });
 </script>
 
 <template>
@@ -73,7 +74,7 @@ const recentFoldersInMenu = defineModel<number>('recentFoldersInMenu', { require
       <div class="settings-row settings-row--column">
         <div>
           <label class="settings-row-title">菜单中显示的历史记录条数</label>
-          <p class="settings-row-desc">「文件 → 打开历史记录」子菜单中显示的最近打开文件夹数量。</p>
+          <p class="settings-row-desc">「文件 → 打开历史记录」子菜单中，最近打开的文件夹与文件各自显示的数量。</p>
         </div>
         <SettingsRangeField
           v-model="recentFoldersInMenu"
@@ -85,6 +86,24 @@ const recentFoldersInMenu = defineModel<number>('recentFoldersInMenu', { require
           value-suffix=" 条"
           min-label="1条"
           max-label="20条"
+        />
+      </div>
+
+      <div class="settings-row settings-row--column">
+        <div>
+          <label class="settings-row-title">初始界面显示的最近文件条数</label>
+          <p class="settings-row-desc">程序启动 / 关闭文件夹后，左侧「最近打开的文件」区域显示的数量。</p>
+        </div>
+        <SettingsRangeField
+          v-model="recentFilesInSidebar"
+          class="w-full"
+          label="最近文件条数"
+          :min="1"
+          :max="40"
+          :step="1"
+          value-suffix=" 条"
+          min-label="1条"
+          max-label="40条"
         />
       </div>
     </section>

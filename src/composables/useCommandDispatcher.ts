@@ -37,6 +37,7 @@ export interface CommandDispatcherOptions {
   handleQuit: () => void | Promise<void>;
   handleCloseFolder: () => void | Promise<void>;
   openRecentByIndex: (index: number) => void | Promise<void>;
+  openRecentFileByIndex: (index: number) => void | Promise<void>;
   clearRecentFolders: () => void | Promise<void>;
 }
 
@@ -55,7 +56,15 @@ export function useCommandDispatcher(options: CommandDispatcherOptions) {
   }
 
   async function executeCommand(commandId: string, source: CommandSource = 'menu'): Promise<boolean> {
-    // 动态历史菜单项：file.openRecent.<index>
+    // 动态历史菜单项：file.openRecent.<index>（文件夹）与 file.openRecentFile.<index>（文件）
+    if (commandId.startsWith('file.openRecentFile.')) {
+      const index = Number.parseInt(commandId.slice('file.openRecentFile.'.length), 10);
+      if (Number.isInteger(index) && index >= 0) {
+        await options.openRecentFileByIndex(index);
+        return true;
+      }
+      return false;
+    }
     if (commandId.startsWith('file.openRecent.')) {
       const index = Number.parseInt(commandId.slice('file.openRecent.'.length), 10);
       if (Number.isInteger(index) && index >= 0) {

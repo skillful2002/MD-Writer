@@ -11,9 +11,11 @@
       :flat-tree="flatTree"
       :current-file-path="currentFilePath"
       :recent-folders="recentFolders"
+      :recent-files="recentFiles"
       @update-search-query="searchQuery = $event"
       @open-folder="$emit('open-folder')"
       @open-recent="$emit('open-recent', $event)"
+      @open-recent-file="$emit('open-recent-file', $event)"
       @select-node="handleNodeClick"
       @context-menu="showContextMenu"
       @new-markdown="$emit('new-markdown')"
@@ -48,7 +50,7 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue';
 import type { TreeNode } from '../../composables/useWorkspaceSession';
-import type { RecentFolder } from '../../services/tauri/history-store';
+import type { RecentFile, RecentFolder } from '../../services/tauri/history-store';
 import { confirm } from '../../services/tauri/dialog';
 import { dirname } from '../../utils/path';
 import SidebarFileDialogs from './SidebarFileDialogs.vue';
@@ -61,11 +63,13 @@ const props = defineProps<{
   currentFilePath: string | null;
   pendingRenamePath?: string | null;
   recentFolders: RecentFolder[];
+  recentFiles: RecentFile[];
 }>();
 
 const emit = defineEmits<{
   (e: 'open-folder'): void;
   (e: 'open-recent', path: string): void;
+  (e: 'open-recent-file', path: string): void;
   (e: 'open-file', path: string): void;
   (e: 'open-image', path: string): void;
   (e: 'open-file-in-new-window', path: string): void;

@@ -40,6 +40,8 @@ export interface Settings {
   customEditorCSS: string;
   /** 左侧文件列表中显示的最近打开文件夹数量 */
   recentFoldersInSidebar: number;
+  /** 左侧初始/关闭文件夹后显示的最近打开文件数量 */
+  recentFilesInSidebar: number;
   /** 菜单「打开历史记录」中显示的最近打开文件夹数量 */
   recentFoldersInMenu: number;
   /** Config version */
@@ -62,6 +64,7 @@ const DEFAULT_SETTINGS: Settings = {
   customEditorCSS: '',
   recentFoldersInSidebar: 10,
   recentFoldersInMenu: 10,
+  recentFilesInSidebar: 10,
   configVersion: 5,
 };
 

@@ -176,6 +176,7 @@ function onKeyDown(e: KeyboardEvent) {
                   v-model:auto-save-interval="settings.autoSaveInterval"
                   v-model:recent-folders-in-sidebar="settings.recentFoldersInSidebar"
                   v-model:recent-folders-in-menu="settings.recentFoldersInMenu"
+                  v-model:recent-files-in-sidebar="settings.recentFilesInSidebar"
                 />
 
                 <!-- 导出设置 -->

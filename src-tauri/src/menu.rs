@@ -90,11 +90,15 @@ fn build_menu(
     )?;
 
     let recents = read_recent_folders(app);
+    let recent_files = read_recent_files(app);
     let menu_limit = read_recent_menu_limit(app);
+    let has_recents = !recents.is_empty();
+    let has_recent_files = !recent_files.is_empty();
     let mut history_owned: Vec<Box<dyn tauri::menu::IsMenuItem<tauri::Wry>>> = Vec::new();
-    if recents.is_empty() {
+    if !has_recents && !has_recent_files {
         history_owned.push(Box::new(MenuItem::with_id(app, "file.openRecent.empty", "（无历史记录）", false, None::<&str>)?));
     } else {
+        // 最近打开的文件夹
         for (i, (recent_path, recent_name)) in recents.iter().take(menu_limit).enumerate() {
             let label = if recent_name.is_empty() {
                 recent_path.clone()
@@ -103,9 +107,24 @@ fn build_menu(
             };
             history_owned.push(Box::new(MenuItem::with_id(app, format!("file.openRecent.{i}"), label, true, None::<&str>)?));
         }
+        // 最近打开的文件
+        if has_recent_files {
+            if has_recents {
+                history_owned.push(Box::new(PredefinedMenuItem::separator(app)?));
+                history_owned.push(Box::new(MenuItem::with_id(app, "file.openRecentFile.header", "最近打开的文件", false, None::<&str>)?));
+            }
+            for (i, (file_path, file_name)) in recent_files.iter().take(menu_limit).enumerate() {
+                let label = if file_name.is_empty() {
+                    file_path.clone()
+                } else {
+                    file_name.clone()
+                };
+                history_owned.push(Box::new(MenuItem::with_id(app, format!("file.openRecentFile.{i}"), label, true, None::<&str>)?));
+            }
+        }
     }
     history_owned.push(Box::new(PredefinedMenuItem::separator(app)?));
-    history_owned.push(Box::new(MenuItem::with_id(app, "file.clearRecent", "清除历史记录", !recents.is_empty(), None::<&str>)?));
+    history_owned.push(Box::new(MenuItem::with_id(app, "file.clearRecent", "清除历史记录", has_recents || has_recent_files, None::<&str>)?));
     let history_refs: Vec<&dyn tauri::menu::IsMenuItem<tauri::Wry>> =
         history_owned.iter().map(|b| b.as_ref()).collect();
     let history_submenu = Submenu::with_items(app, "打开历史记录", true, &history_refs)?;
@@ -271,8 +290,39 @@ fn read_recent_folders(app: &tauri::AppHandle) -> Vec<(String, String)> {
         .collect()
 }
 
+/// 读取历史文件记录（recentFiles），与 read_recent_folders 对称。
+/// 这些项会作为「打开历史记录」子菜单中「最近打开的文件」分组展示，
+/// 命令 id 形如 file.openRecentFile.<index>。
+fn read_recent_files(app: &tauri::AppHandle) -> Vec<(String, String)> {
+    let dir = match app.path().app_data_dir() {
+        Ok(d) => d,
+        Err(_) => return Vec::new(),
+    };
+    let path = dir.join("history.json");
+    let content = match fs::read_to_string(&path) {
+        Ok(c) => c,
+        Err(_) => return Vec::new(),
+    };
+    let value: serde_json::Value = match serde_json::from_str(&content) {
+        Ok(v) => v,
+        Err(_) => return Vec::new(),
+    };
+    let arr = match value.get("recentFiles").and_then(|v| v.as_array()) {
+        Some(a) => a,
+        None => return Vec::new(),
+    };
+    arr.iter()
+        .filter_map(|item| {
+            let path = item.get("path").and_then(|v| v.as_str())?.to_string();
+            let name = item.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            Some((path, name))
+        })
+        .collect()
+}
+
 /// 读取设置中「菜单中显示的历史记录条数」(recentFoldersInMenu)，默认 10。
-/// 该值位于 settings.json 的 { "settings": { "recentFoldersInMenu": N } }。
+/// 该值同时限制「打开历史记录」子菜单中文件夹与文件两个分组的展示数量。
+/// 位于 settings.json 的 { "settings": { "recentFoldersInMenu": N } }。
 fn read_recent_menu_limit(app: &tauri::AppHandle) -> usize {
     const DEFAULT_LIMIT: usize = 10;
     let dir = match app.path().app_data_dir() {

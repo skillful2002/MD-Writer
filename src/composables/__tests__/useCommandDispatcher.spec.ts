@@ -74,6 +74,7 @@ function createDispatcher() {
     handleQuit,
     handleCloseFolder: vi.fn(),
     openRecentByIndex: vi.fn(),
+    openRecentFileByIndex: vi.fn(),
     clearRecentFolders: vi.fn(),
   });
 

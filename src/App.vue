@@ -26,6 +26,7 @@ import SidebarOutlinePanel from './components/Editor/SidebarOutlinePanel.vue';
 import { useFileStore } from './stores/file';
 import { useSettingsStore } from './stores/settings';
 import { useRecentFoldersStore } from './stores/recentFolders';
+import { useRecentFilesStore } from './stores/recentFiles';
 import { message } from './services/tauri/dialog';
 import { findCommandByShortcut } from './utils/shortcuts';
 import { dirname } from './utils/path';
@@ -36,9 +37,13 @@ const MarkdownEditor = defineAsyncComponent(() => import('./components/Editor/Ma
 const fileStore = useFileStore();
 const settingsStore = useSettingsStore();
 const recentFoldersStore = useRecentFoldersStore();
+const recentFilesStore = useRecentFilesStore();
 const { settings, isLoaded } = storeToRefs(settingsStore);
 const recentFoldersForSidebar = computed(() =>
   recentFoldersStore.displayFolders(settings.value.recentFoldersInSidebar),
+);
+const recentFilesForSidebar = computed(() =>
+  recentFilesStore.displayFiles(settings.value.recentFilesInSidebar),
 );
 const appVersion = pkg.version;
 const { editorRef, stats, outlineItems, handleEditorUpdate, scrollToHeading } =
@@ -57,8 +62,9 @@ const documentSession = useDocumentSession({
   resetViewMode: resetToEditor,
 });
 
-async function handleOpenFile(path: string) {
-  await documentSession.openDocumentWithPrompt(path);
+async function handleOpenFile(path: string, recordAsRecent = true) {
+  // recordAsRecent=false 表示来自文件列表（侧栏）的打开：按规则 2，仅编辑保存后才记入历史。
+  await documentSession.openDocumentWithPrompt(path, recordAsRecent);
 }
 
 // 源码模式：把文本区的光标位置（行/列）同步到状态栏
@@ -153,8 +159,16 @@ async function openRecentByIndex(index: number) {
   }
 }
 
+async function openRecentFileByIndex(index: number) {
+  const file = recentFilesStore.files[index];
+  if (file) {
+    await handleOpenFile(file.path);
+  }
+}
+
 async function clearRecentFolders() {
   await recentFoldersStore.clear();
+  await recentFilesStore.clear();
 }
 
 async function handleCloseFolder() {
@@ -244,6 +258,7 @@ const { executeCommand } = useCommandDispatcher({
   handleQuit: windowSession.handleQuit,
   handleCloseFolder,
   openRecentByIndex,
+  openRecentFileByIndex,
   clearRecentFolders,
 });
 
@@ -273,6 +288,21 @@ watch(
   { immediate: true },
 );
 
+// 历史记录（文件夹 / 文件）变化时，去抖重建原生菜单，
+// 使「打开历史记录」子菜单即时反映最新记录（否则要等下次启动/快捷键变更才刷新）。
+let menuRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+watch(
+  () => [recentFoldersStore.folders, recentFilesStore.files],
+  () => {
+    if (!isLoaded.value) return;
+    if (menuRefreshTimer) clearTimeout(menuRefreshTimer);
+    menuRefreshTimer = setTimeout(() => {
+      void syncMenuShortcuts();
+    }, 300);
+  },
+  { deep: true },
+);
+
 useMenuEvents(async (commandId) => {
   await executeCommand(commandId, 'menu');
 });
@@ -283,6 +313,7 @@ onMounted(async () => {
   await windowSession.setup();
   await syncMenuShortcuts();
   await recentFoldersStore.load();
+  await recentFilesStore.load();
 });
 
 onUnmounted(() => {
@@ -332,9 +363,11 @@ onUnmounted(() => {
           :current-file-path="fileStore.currentFile.path"
           :pending-rename-path="pendingRenamePath"
           :recent-folders="recentFoldersForSidebar"
+          :recent-files="recentFilesForSidebar"
           @open-folder="handleOpenFolder"
           @open-recent="openWorkspaceByPath"
-          @open-file="handleOpenFile"
+          @open-file="(p) => handleOpenFile(p, false)"
+          @open-recent-file="handleOpenFile"
           @open-image="handleOpenImage"
           @toggle-dir="toggleDir"
           @open-file-in-new-window="handleOpenNewWindow"

@@ -2,9 +2,17 @@ import { LazyStore } from '@tauri-apps/plugin-store';
 
 const HISTORY_STORE_PATH = 'history.json';
 const RECENT_FOLDERS_KEY = 'recentFolders';
+const RECENT_FILES_KEY = 'recentFiles';
 const MAX_RECENT_FOLDERS = 50;
+const MAX_RECENT_FILES = 100;
 
 export interface RecentFolder {
+  path: string;
+  name: string;
+  lastOpened: number;
+}
+
+export interface RecentFile {
   path: string;
   name: string;
   lastOpened: number;
@@ -40,5 +48,33 @@ export async function addRecentFolder(path: string, name: string): Promise<void>
 
 export async function clearRecentFolders(): Promise<void> {
   await historyStore.set(RECENT_FOLDERS_KEY, []);
+  await historyStore.save();
+}
+
+export async function getRecentFiles(): Promise<RecentFile[]> {
+  const list = await historyStore.get<RecentFile[]>(RECENT_FILES_KEY);
+  if (!Array.isArray(list)) {
+    return [];
+  }
+  return list.filter(
+    (item): item is RecentFile =>
+      item != null &&
+      typeof item.path === 'string' &&
+      typeof item.name === 'string' &&
+      typeof item.lastOpened === 'number',
+  );
+}
+
+export async function addRecentFile(path: string, name: string): Promise<void> {
+  const list = await getRecentFiles();
+  const filtered = list.filter((item) => item.path !== path);
+  filtered.unshift({ path, name, lastOpened: Date.now() });
+  const trimmed = filtered.slice(0, MAX_RECENT_FILES);
+  await historyStore.set(RECENT_FILES_KEY, trimmed);
+  await historyStore.save();
+}
+
+export async function clearRecentFiles(): Promise<void> {
+  await historyStore.set(RECENT_FILES_KEY, []);
   await historyStore.save();
 }

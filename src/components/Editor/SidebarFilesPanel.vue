@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { TreeNode } from '../../composables/useWorkspaceSession';
-import type { RecentFolder } from '../../services/tauri/history-store';
+import type { RecentFile, RecentFolder } from '../../services/tauri/history-store';
 import FileTreePanel from './FileTreePanel.vue';
 import FileTreeSearchResults from './FileTreeSearchResults.vue';
 
@@ -12,12 +12,14 @@ defineProps<{
   flatTree: Array<{ node: TreeNode; depth: number }>;
   currentFilePath: string | null;
   recentFolders: RecentFolder[];
+  recentFiles: RecentFile[];
 }>();
 
 const emit = defineEmits<{
   (e: 'update-search-query', value: string): void;
   (e: 'open-folder'): void;
   (e: 'open-recent', path: string): void;
+  (e: 'open-recent-file', path: string): void;
   (e: 'select-node', node: TreeNode, event?: MouseEvent): void;
   (e: 'context-menu', event: MouseEvent, node: TreeNode): void;
   (e: 'new-markdown'): void;
@@ -28,24 +30,40 @@ const emit = defineEmits<{
 <template>
   <div class="flex-1 flex flex-col overflow-hidden">
     <div v-if="!rootFolder" class="flex-1 overflow-y-auto p-3">
-      <template v-if="recentFolders.length">
+      <template v-if="recentFolders.length || recentFiles.length">
         <button
           class="block mb-3 text-blue-500 hover:underline text-xs px-1"
           @click="emit('open-folder')"
         >
           打开其他文件夹…
         </button>
-        <div class="text-[11px] text-gray-400 mb-1 px-1 dark:text-[var(--muted-color)]">最近打开的文件夹</div>
-        <button
-          v-for="folder in recentFolders"
-          :key="folder.path"
-          class="w-full flex items-center text-left px-2 py-1.5 rounded-md text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 dark:text-[var(--muted-color)] dark:hover:bg-[var(--active-bg)] dark:hover:text-[var(--text-color)] transition-colors"
-          :title="folder.path"
-          @click="emit('open-recent', folder.path)"
-        >
-          <span class="mr-1.5 flex-shrink-0">📁</span>
-          <span class="truncate">{{ folder.name }}</span>
-        </button>
+        <template v-if="recentFolders.length">
+          <div class="text-[11px] text-gray-400 mb-1 px-1 dark:text-[var(--muted-color)]">最近打开的文件夹</div>
+          <button
+            v-for="folder in recentFolders"
+            :key="folder.path"
+            class="w-full flex items-center text-left px-2 py-1.5 rounded-md text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 dark:text-[var(--muted-color)] dark:hover:bg-[var(--active-bg)] dark:hover:text-[var(--text-color)] transition-colors"
+            :title="folder.path"
+            @click="emit('open-recent', folder.path)"
+          >
+            <span class="mr-1.5 flex-shrink-0">📁</span>
+            <span class="truncate">{{ folder.name }}</span>
+          </button>
+        </template>
+
+        <template v-if="recentFiles.length">
+          <div class="text-[11px] text-gray-400 mt-4 mb-1 px-1 dark:text-[var(--muted-color)]">最近打开的文件</div>
+          <button
+            v-for="file in recentFiles"
+            :key="file.path"
+            class="w-full flex items-center text-left px-2 py-1.5 rounded-md text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 dark:text-[var(--muted-color)] dark:hover:bg-[var(--active-bg)] dark:hover:text-[var(--text-color)] transition-colors"
+            :title="file.path"
+            @click="emit('open-recent-file', file.path)"
+          >
+            <span class="mr-1.5 flex-shrink-0">📄</span>
+            <span class="truncate">{{ file.name }}</span>
+          </button>
+        </template>
       </template>
       <div v-else class="p-4 text-xs text-gray-400 italic">
         请打开文件夹以查看文件列表
@@ -111,7 +129,7 @@ const emit = defineEmits<{
     >
       <div class="flex items-center justify-between">
         <button
-          class="flex items-center text-[10px] text-gray-400 truncate flex-1 text-left hover:text-blue-500 transition-colors"
+          class="flex items-center text-xs text-gray-400 truncate flex-1 text-left hover:text-blue-500 transition-colors"
           :title="`当前文件夹：${rootFolder}\n点击以关闭此文件夹`"
           @click="emit('folder-menu', $event)"
         >
