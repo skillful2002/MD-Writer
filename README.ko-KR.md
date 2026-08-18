@@ -58,7 +58,6 @@ MarkdownEd는 명확한 세 계층으로 구성됩니다.
 - [아키텍처](./docs/ARCHITECTURE.md)
 - [엔지니어링 표준](./docs/ENGINEERING_STANDARDS.md)
 - [로드맵](./docs/ROADMAP.md)
-- [변경 내역](./docs/CHANGELOG.md)
 
 ## 기술 스택
 

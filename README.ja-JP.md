@@ -58,7 +58,6 @@ MarkdownEd は明確な 3 層構造を採用しています。
 - [アーキテクチャ](./docs/ARCHITECTURE.md)
 - [エンジニアリング標準](./docs/ENGINEERING_STANDARDS.md)
 - [ロードマップ](./docs/ROADMAP.md)
-- [変更履歴](./docs/CHANGELOG.md)
 
 ## 技術スタック
 

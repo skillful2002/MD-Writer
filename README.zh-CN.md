@@ -5,7 +5,7 @@
 <h1 align="center">纽新 (MarkdownEd)</h1>
 
 <p align="center">
-  <strong>一款基于 Tauri 2、Rust 领域内核与 TipTap 的本地优先 Markdown 编辑器</strong>
+  <strong>本地优先的 Markdown 编辑器 · 基于 Tauri 2、Rust 领域内核与 TipTap</strong>
 </p>
 
 <p align="center">
@@ -30,35 +30,37 @@
   </a>
 </p>
 
+## 项目简介
+
+**MarkdownEd**（中文名「纽新」）是一款跨平台、本地优先的 Markdown 编辑器。它用 Tauri 2 的桌面原生边界、Rust 领域内核与 TipTap 所见即所得编辑器，提供稳定、快速、可扩展的写作体验。所有文档、图片与工作区数据都保存在你自己的机器上，不上传云端。
+
+> 当前版本：**1.0.0**
+
 ## 核心特性
 
-- 所见即所得编辑：基于 TipTap / ProseMirror，代码块、表格、数学公式、Mermaid、Callout 等都在渲染态编辑。
-- 本地优先：文档、图片和工作区全部在本地管理，图片自动落到文档目录下的 `.images/`。
-- 多窗口桌面体验：支持新窗口打开文档、窗口状态持久化、原生菜单和系统打印。
-- 结构化工作区：Rust 负责目录过滤、watcher 聚合、外部变更事件和保存冲突检测。
-- 微信与 HTML 导出：前端渲染导出内容，原生侧负责打印与文件写入。
+- **所见即所得编辑**：基于 TipTap / ProseMirror，代码块、表格、数学公式、Mermaid 图表、Callout 等都在渲染态直接编辑，无需在源码与预览之间反复切换。
+- **本地优先**：文档、图片与工作区全部留在本地；粘贴或拖拽的图片自动保存到文档同级的 `.images/` 目录，使用相对路径引用。
+- **最近打开**：侧栏与菜单一键访问近期文档与文件夹，并支持配置显示条数。
+- **源码 / 编辑双模式**：两种模式切换时保持光标所在行，编辑器带源码行号，方便精确核对 Markdown 原文。
+- **表格增强**：单元格内可增删行列、切换表头；代码块切换语言后光标自动定位到内容首行。
+- **统一标题栏**：面板切换收口到自定义标题栏，大纲面板移至编辑区右侧，深色主题全面跟随。
+- **多窗口桌面体验**：支持新窗口打开文档、窗口状态持久化、原生菜单与系统打印。
+- **结构化工作区**：Rust 负责目录过滤、文件监听聚合、外部变更事件与保存冲突检测。
+- **导出能力**：微信排版与 HTML 导出，前端渲染导出内容，原生侧负责打印与文件写入。
 
 ## 技术架构
 
-MarkdownEd 现在采用明确的三层边界：
+MarkdownEd 采用清晰的三层边界：
 
-- Vue 3 + Pinia + TipTap：负责 UI、编辑器体验和命令分发
-- Tauri 2：负责插件、权限边界和命令/事件桥接
-- Rust 领域内核：负责文档、工作区、窗口运行时和 watcher 一致性
+- **Vue 3 + Pinia + TipTap**：UI、编辑器交互与命令分发。
+- **Tauri 2**：插件、权限边界与命令 / 事件桥接。
+- **Rust 领域内核**：文档、工作区、窗口运行时与文件监听一致性。
 
-约束如下：
+约定约束：
 
-- 前端业务层不直接调用 `invoke` / `listen` / `emit`
-- Rust 对外命令全部返回结构化 DTO 和 `AppError`
-- 通用桌面能力优先使用官方插件
-
-更多说明见：
-
-- [文档索引](./docs/README.md)
-- [架构说明](./docs/ARCHITECTURE.md)
-- [工程标准](./docs/ENGINEERING_STANDARDS.md)
-- [路线图](./docs/ROADMAP.md)
-- [更新日志](./docs/CHANGELOG.md)
+- 前端业务层不直接调用 `invoke` / `listen` / `emit`。
+- Rust 对外命令统一返回结构化 DTO 与 `AppError`。
+- 通用桌面能力优先使用官方 Tauri 插件。
 
 ## 技术栈
 
@@ -70,34 +72,29 @@ MarkdownEd 现在采用明确的三层边界：
 - 样式：Tailwind CSS
 - 原生插件：store / window-state / dialog / opener / cli
 
-## 开发
+## 快速开始
 
 ```bash
+# 包管理器已迁移到 bun；若本地未安装 bun，可将下方 bun 命令替换为 npm
 bun install
-bun run dev
-bun run dev:tauri
+bun run dev          # 仅启动前端
+bun run dev:tauri    # 前端 + 桌面端
 bun run build
 bun run build:tauri
-bun run lint
-bun run format
-bunx vue-tsc --noEmit
 bun run test
 cargo check --manifest-path src-tauri/Cargo.toml
 ```
 
-## 当前架构重点
+## 文档
 
-- 文档保存冲突检测已经统一移到 Rust `save_document`
-- 工作区 watcher 事件统一为 `workspace-changed`
-- 启动打开、系统打开、多窗口待处理打开请求统一使用 `app-open-paths` payload 模型
-- `App.vue` 只做组合面，文档/工作区/窗口生命周期已经分别下沉到 session composable
+更完整的设计与开发约定见 `docs/` 目录：
 
-## 贡献
+- [架构说明](./docs/ARCHITECTURE.md)：系统分层、运行时拓扑、领域边界和演进约束。
+- [工程标准](./docs/ENGINEERING_STANDARDS.md)：Tauri、Rust、Vue、事件、文档和 Review 约束。
+- [路线图](./docs/ROADMAP.md)：当前阶段、已完成能力和后续计划。
+- [许可证说明](./docs/LICENSE_NOTES.md)：Apache 2.0 许可的简要说明。
+- [语义编辑模型](./docs/SEMANTIC_EDITOR_MODEL.md)：编辑器文档模型重构的不变量和迁移方向。
 
-- Issue 和 PR 欢迎提交到 GitHub
-- 架构或边界变更前，请先阅读 `docs/ARCHITECTURE.md` 和 `docs/ENGINEERING_STANDARDS.md`
-- 新能力进入项目时，请优先证明为什么不能由现有插件或现有领域模块承担
-
-## License
+## 许可证
 
 MarkdownEd 基于 [Apache License 2.0](LICENSE) 开源。
