@@ -29,7 +29,6 @@ import { useRecentFilesStore } from './stores/recentFiles';
 import { message } from './services/tauri/dialog';
 import { findCommandByShortcut } from './utils/shortcuts';
 import { dirname } from './utils/path';
-import { isMac } from './utils/platform';
 import pkg from '../package.json';
 
 const MarkdownEditor = defineAsyncComponent(() => import('./components/Editor/MarkdownEditor.vue'));
