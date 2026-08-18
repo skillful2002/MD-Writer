@@ -53,7 +53,18 @@ fn refresh_native_menu_shortcuts(
     app: tauri::AppHandle,
     shortcuts: HashMap<String, String>,
 ) -> Result<(), error::AppError> {
-    menu::setup_menu(&app, &shortcuts).map_err(error::AppError::from)
+    // 仅 macOS 拥有原生菜单栏，需要按自定义快捷键重建。
+    // Windows/Linux 使用自定义 TitleBar 中的 HTML 菜单（直接读取设置中的快捷键），
+    // 无原生菜单，此处安全空转，避免重建失败或重新叠加原生菜单。
+    #[cfg(target_os = "macos")]
+    {
+        menu::setup_menu(&app, &shortcuts).map_err(error::AppError::from)
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = shortcuts;
+        Ok(())
+    }
 }
 
 #[tauri::command]
@@ -281,8 +292,15 @@ pub fn run() {
                 }
             }
 
-            menu::setup_menu(&app.handle(), &HashMap::new()).map_err(error::AppError::from)?;
-            menu::attach_menu_events(&app.handle());
+            // 仅 macOS 使用系统级原生菜单栏（菜单显示在系统顶部菜单条）。
+            // Windows/Linux 关闭原生窗口装饰（set_decorations(false)），改用自定义
+            // TitleBar.vue 作为唯一顶栏：内含 HTML 菜单 + 居中文件名 + 面板切换图标
+            // 按钮 + 窗口控制按钮。避免「原生菜单 + 自定义标题栏」叠加出现的重复一行。
+            #[cfg(target_os = "macos")]
+            {
+                menu::setup_menu(&app.handle(), &HashMap::new()).map_err(error::AppError::from)?;
+                menu::attach_menu_events(&app.handle());
+            }
 
             if let Some(main_window) = app.get_webview_window("main") {
                 #[cfg(any(target_os = "windows", target_os = "linux"))]

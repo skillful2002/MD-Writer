@@ -21,7 +21,6 @@ import SourceEditorView from './components/Editor/SourceEditorView.vue';
 import StatusBar from './components/Layout/StatusBar.vue';
 import TitleBar from './components/Layout/TitleBar.vue';
 import SettingsModal from './components/Settings/SettingsModal.vue';
-import EditorToolbar from './components/Toolbar/EditorToolbar.vue';
 import SidebarOutlinePanel from './components/Editor/SidebarOutlinePanel.vue';
 import { useFileStore } from './stores/file';
 import { useSettingsStore } from './stores/settings';
@@ -30,6 +29,7 @@ import { useRecentFilesStore } from './stores/recentFiles';
 import { message } from './services/tauri/dialog';
 import { findCommandByShortcut } from './utils/shortcuts';
 import { dirname } from './utils/path';
+import { isMac } from './utils/platform';
 import pkg from '../package.json';
 
 const MarkdownEditor = defineAsyncComponent(() => import('./components/Editor/MarkdownEditor.vue'));
@@ -348,21 +348,6 @@ onUnmounted(() => {
       @toggle-outline="toggleOutline"
       @toggle-source="onToggleSource"
     />
-
-    <div
-      class="toolbar-container transition-opacity duration-300"
-      :class="{ 'opacity-0 pointer-events-none': settingsStore.isFocusMode }"
-    >
-      <EditorToolbar
-        :is-source-mode="isSourceMode"
-        @new-file="documentSession.handleNewDocument"
-        @open-file="documentSession.handleOpenDocument"
-        @save-file="documentSession.saveCurrentDocument"
-        @toggle-sidebar="toggleSidebar"
-        @toggle-source="onToggleSource"
-        @copy-wechat="copyToWechat"
-      />
-    </div>
 
     <div class="flex-1 flex overflow-hidden">
       <aside

@@ -55,9 +55,8 @@
       </div>
     </div>
 
-    <!-- 中：macOS 文件名（替代 Overlay 模式下不再可见的 native titlebar 文本） -->
+    <!-- 中：文件名（全平台居中，替代原生标题栏文本） -->
     <div
-      v-if="isMac"
       class="flex-1 text-center text-xs truncate px-3"
       data-tauri-no-drag
     >

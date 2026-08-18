@@ -282,19 +282,6 @@ html.focus-mode .focus-mode-editor .tiptap-editor {
   padding: 0 !important;
 }
 
-html.focus-mode .toolbar-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-}
-
-html.focus-mode .toolbar-container:hover {
-  opacity: 1 !important;
-  pointer-events: auto !important;
-}
-
 html.focus-mode .statusbar-container {
   position: fixed;
   bottom: 0;
@@ -315,7 +302,6 @@ html.dark .hljs {
 
 /* ── 打印样式 ──────────────────────────────────────────────── */
 @media print {
-  .toolbar-container,
   .statusbar-container,
   aside,
   .link-tooltip,

@@ -23,8 +23,8 @@
       </svg>
     </button>
 
-    <!-- 与切换文件按钮拉开距离 -->
-    <span class="panel-toggle-spacer"></span>
+    <!-- 源码与文件列表之间的较大间隔 -->
+    <span class="panel-toggle-gap"></span>
 
     <!-- 文件列表（侧边栏）显隐切换 -->
     <button
@@ -102,9 +102,9 @@ defineEmits<{
   @apply bg-black/5;
 }
 
-/* 源码按钮与文件列表按钮之间的间隔 */
-.panel-toggle-spacer {
-  width: 10px;
+/* 源码按钮与文件列表按钮之间的较大间隔 */
+.panel-toggle-gap {
+  width: 14px;
   height: 1px;
 }
 
