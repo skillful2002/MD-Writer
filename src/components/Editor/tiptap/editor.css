@@ -1098,8 +1098,10 @@ html.dark .tiptap-editor .search-match-current {
   counter-increment: linenumber;
 }
 
-/* 非标题块：行号放在最左侧窄列，用 flex 右对齐 */
-.editor-line-numbers .tiptap-editor > *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6)::before {
+/* 非标题块：行号放在最左侧窄列，用 flex 右对齐。
+   排除空段落（is-empty / is-editor-empty），让 ::before 完全交给 placeholder 规则，
+   避免被本规则的 width/display:flex 截断占位文本。 */
+.editor-line-numbers .tiptap-editor > *:not(h1):not(h2):not(h3):not(h4):not(h5):not(h6):not(.is-empty):not(.is-editor-empty)::before {
   content: counter(linenumber);
   position: absolute;
   left: calc(-1 * (var(--mk-heading-gutter-width) + var(--mk-line-number-width)));
