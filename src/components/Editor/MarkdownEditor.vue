@@ -78,7 +78,7 @@ const searchBarRef = ref<InstanceType<typeof SearchBar> | null>(null);
 const slashMenuRef = ref<SlashMenuController | null>(null);
 const slashMenuItems = ref<SlashCommandItem[]>([]);
 const slashMenuCommand = ref<(item: SlashCommandItem) => void>(() => {});
-useEditorAppearance();
+useEditorAppearance(editorWrapRef);
 
 // ── 创建 TipTap Editor ────────────────────────────────────────
 

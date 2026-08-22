@@ -10,10 +10,14 @@
   --mk-heading-gutter-width: 1.9rem;
   --mk-heading-gutter-gap: 0.25rem;
   outline: none;
-  font-family: var(--font-text);
+  /* 排版参数来自设置（useEditorAppearance 注入到 .mk-editor 的 CSS 变量），
+     缺失时回退到原默认字体/字号/行高。
+     末尾系统字体兜底链：选中字体未安装时优雅回退，避免难看的默认衬线。 */
+  font-family: var(--mk-font-family, var(--font-text)), system-ui, -apple-system,
+    'PingFang SC', 'Microsoft YaHei', sans-serif;
   color: var(--text-color);
-  line-height: 1.75;
-  font-size: 15px;
+  line-height: var(--mk-line-height, 1.75);
+  font-size: var(--mk-font-size, 15px);
   caret-color: var(--primary-color);
   min-height: 100%;
   padding-left: var(--mk-heading-gutter-width);
@@ -314,7 +318,8 @@
   border: 1px solid var(--border-color);
   border-radius: 4px;
   padding: 0.1em 4px;
-  font-size: 0.875em;
+  /* 跟随字号设置，比正文略小（约 87.5%） */
+  font-size: calc(var(--mk-font-size, 15px) * 0.875);
 }
 
 .tiptap-editor mark {
@@ -403,7 +408,8 @@ html.dark .tiptap-editor mark {
   margin: 0;
   overflow-x: auto;
   font-family: var(--font-mono);
-  font-size: 13px;
+  /* 跟随字号设置，比正文略小（约 90%） */
+  font-size: calc(var(--mk-font-size, 15px) * 0.9);
   line-height: 1.6;
 }
 
