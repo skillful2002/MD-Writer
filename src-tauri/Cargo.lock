@@ -2300,6 +2300,7 @@ name = "markdown-ed"
 version = "1.0.0"
 dependencies = [
  "base64 0.22.1",
+ "encoding_rs",
  "notify",
  "objc2-app-kit",
  "objc2-core-text",

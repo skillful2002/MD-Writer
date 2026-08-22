@@ -7,6 +7,10 @@ export interface FileState {
   lastModifiedTime: number | null;
   /** 代码文件的 lowlight 语言 id；null 表示非代码文件或降级为纯文本 */
   language: string | null;
+  /** 文件实际编码(如 "utf-8" / "gb18030")；保存时按此编码回写，避免改变原文件编码 */
+  encoding: string;
+  /** 当前文件是否已就"保存编码"做过选择；每个文件只询问一次，随文件重置 */
+  encodingResolved: boolean;
 }
 
 interface FileStoreState {
@@ -24,6 +28,8 @@ function createEmptyFileState(): FileState {
     isDirty: false,
     lastModifiedTime: null,
     language: null,
+    encoding: 'utf-8',
+    encodingResolved: true,
   };
 }
 
@@ -60,6 +66,8 @@ export const useFileStore = defineStore('file', {
       path: string | null,
       lastModifiedTime: number | null = null,
       language: string | null = null,
+      encoding: string = 'utf-8',
+      encodingResolved: boolean = true,
     ) {
       this.currentFile = {
         path,
@@ -67,6 +75,8 @@ export const useFileStore = defineStore('file', {
         isDirty: false,
         lastModifiedTime,
         language,
+        encoding,
+        encodingResolved,
       };
       // 重置编辑标志
       this.hasUserEdit = false;

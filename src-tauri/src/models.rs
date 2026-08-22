@@ -4,6 +4,9 @@ pub struct DocumentOpenResult {
     pub path: String,
     pub content: String,
     pub last_modified_ms: u64,
+    /// 文件实际解码所用的编码名称(如 "utf-8" / "gb18030")。
+    /// 当文件并非 UTF-8 时, 前端据此在保存时把内容转回原编码写回, 避免静默改变文件编码。
+    pub encoding: String,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
@@ -11,6 +14,8 @@ pub struct DocumentOpenResult {
 pub struct DocumentSaveResult {
     pub path: String,
     pub last_modified_ms: u64,
+    /// 回写时实际使用的编码名称, 便于前端核对。
+    pub encoding: String,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]

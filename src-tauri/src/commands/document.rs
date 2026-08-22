@@ -4,6 +4,7 @@ use crate::models::{
     ImageAssetAuthorizationResult,
 };
 use base64::Engine;
+use encoding_rs::{Encoding, UTF_8};
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -12,15 +13,57 @@ use tauri::{AppHandle, Manager};
 
 const IMAGE_EXTENSIONS: [&str; 6] = ["png", "jpg", "jpeg", "gif", "webp", "svg"];
 
+/// 将文件字节解码为 UTF-8 字符串。
+///
+/// 默认按 UTF-8 解码; 若不是合法 UTF-8(常见于中文 Windows 下以 GBK/GB2312
+/// 保存的 Markdown/文本), 则回退到 GB18030(向下兼容 GBK、GB2312)解码,
+/// 保证文件能被正常打开而不丢失数据。返回 (内容, 实际编码名称)。
+fn decode_bytes(bytes: &[u8]) -> (String, String) {
+    // UTF_8.decode_without_bom_handling 对非法字节会返回替换字符而非报错,
+    // 因此用它判断是否"疑似 UTF-8": 若解码后不含 U+FFFD 且能原样还原则视为 UTF-8。
+    let (utf8_cow, had_errors) = UTF_8.decode_without_bom_handling(bytes);
+    if !had_errors {
+        return (utf8_cow.into_owned(), "utf-8".to_string());
+    }
+
+    // 回退到 GB18030 覆盖中文编码, 之后仍带替换字符也一并保留(尽量不丢内容)。
+    if let Some(gb) = Encoding::for_label(b"gb18030") {
+        let (cow, _) = gb.decode_without_bom_handling(bytes);
+        return (cow.into_owned(), "gb18030".to_string());
+    }
+
+    // 极端兜底: 直接按-lossy 用 UTF-8 呈现(替换非法字节), 至少能打开。
+    (String::from_utf8_lossy(bytes).into_owned(), "utf-8".to_string())
+}
+
+/// 将编辑后的内容按指定编码编码回字节。
+/// 仅当 encoding 可被 encoding_rs 识别且非 UTF-8 时才做转码;
+/// 其余情况(含未知的 utf-8)一律按 UTF-8 写回, 与原行为一致。
+fn encode_content(content: &str, encoding: &str) -> Vec<u8> {
+    if encoding.eq_ignore_ascii_case("utf-8") || encoding.eq_ignore_ascii_case("utf8") {
+        return content.as_bytes().to_vec();
+    }
+    if let Some(enc) = Encoding::for_label(encoding.as_bytes()) {
+        if enc == UTF_8 {
+            return content.as_bytes().to_vec();
+        }
+        let (bytes, _, _) = enc.encode(content);
+        return bytes.into_owned();
+    }
+    content.as_bytes().to_vec()
+}
+
 #[tauri::command]
 pub fn open_document(path: String) -> Result<DocumentOpenResult, AppError> {
-    let content = fs::read_to_string(&path)?;
+    let bytes = fs::read(&path)?;
+    let (content, encoding) = decode_bytes(&bytes);
     let last_modified_ms = read_modified_time_ms(Path::new(&path))?;
 
     Ok(DocumentOpenResult {
         path,
         content,
         last_modified_ms,
+        encoding,
     })
 }
 
@@ -30,6 +73,7 @@ pub fn save_document(
     content: String,
     expected_last_modified_ms: Option<u64>,
     force: bool,
+    encoding: Option<String>,
 ) -> Result<DocumentSaveResult, AppError> {
     let path_ref = Path::new(&path);
     if !force {
@@ -44,12 +88,15 @@ pub fn save_document(
         }
     }
 
-    atomic_write(path_ref, content.as_bytes())?;
+    let encoding = encoding.unwrap_or_else(|| "utf-8".to_string());
+    let bytes = encode_content(&content, &encoding);
+    atomic_write(path_ref, &bytes)?;
     let last_modified_ms = read_modified_time_ms(path_ref)?;
 
     Ok(DocumentSaveResult {
         path,
         last_modified_ms,
+        encoding,
     })
 }
 

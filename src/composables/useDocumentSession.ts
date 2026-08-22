@@ -29,12 +29,29 @@ export function useDocumentSession(options: DocumentSessionOptions) {
   let autoSaveIntervalId: ReturnType<typeof setInterval> | null = null;
   let autoSaveStatusTimer: ReturnType<typeof setTimeout> | null = null;
   let externalWarningTimer: ReturnType<typeof setTimeout> | null = null;
+  // 保存防重入锁：一次 Cmd+S 会同时触发系统菜单加速键与前端 keydown 两条路径，
+  // 若并发执行会在编码选择框弹出期间重复弹框、并因 mtime 竞争触发"强制覆盖"。
+  // 已有保存流程进行中时，后续调用直接忽略。
+  let saveInProgress = false;
 
-  async function loadDocumentFromPath(path: string): Promise<boolean> {
+  // 把内部编码名映射为对用户友好的描述, 便于在选择框中展示原编码格式。
+  function encodingLabel(encoding: string): string {
+    const lower = encoding.toLowerCase();
+    if (lower === 'gb18030') return 'GB18030（中文，兼容 GBK / GB2312）';
+    if (lower === 'gbk') return 'GBK（中文）';
+    if (lower === 'gb2312') return 'GB2312（中文）';
+    if (lower === 'big5') return 'Big5（繁体中文）';
+    if (lower === 'shift_jis' || lower === 'sjis') return 'Shift_JIS（日文）';
+    if (lower === 'euc-jp') return 'EUC-JP（日文）';
+    if (lower === 'euc-kr') return 'EUC-KR（韩文）';
+    return encoding.toUpperCase();
+  }
+
+  async function loadDocumentFromPath(path: string, resetEncodingState = true): Promise<boolean> {
     try {
       fileStore.setLoading(true);
       const document = await openDocument(path);
-      applyLoadedDocument(document);
+      applyLoadedDocument(document, resetEncodingState);
       return true;
     } catch (error) {
       const { message: errorMessage } = normalizeTauriError(error);
@@ -46,9 +63,20 @@ export function useDocumentSession(options: DocumentSessionOptions) {
     }
   }
 
-  function applyLoadedDocument(document: DocumentOpenResult) {
+  function applyLoadedDocument(document: DocumentOpenResult, resetEncodingState = true) {
     const language = languageFromPath(document.path);
-    fileStore.setFile(document.content, document.path, document.lastModifiedMs, language);
+    const isNonUtf = !!document.encoding && !document.encoding.toLowerCase().startsWith('utf');
+    // 非 UTF-8 文件加载后标记"编码待确认"(保存时只问一次)，UTF-8 文件直接视为已确认。
+    // 仅当用户主动打开新文件时重置该状态；外部同步重载(resetEncodingState=false)保留已确认状态, 避免反复弹窗。
+    const resolved = resetEncodingState ? !isNonUtf : fileStore.currentFile.encodingResolved;
+    fileStore.setFile(
+      document.content,
+      document.path,
+      document.lastModifiedMs,
+      language,
+      document.encoding,
+      resolved,
+    );
   }
 
   async function confirmDiscardUnsavedChanges() {
@@ -139,10 +167,51 @@ export function useDocumentSession(options: DocumentSessionOptions) {
     force: boolean,
     expectedLastModifiedMs?: number | null,
   ) {
-    return saveDocument(path, fileStore.currentFile.content, expectedLastModifiedMs, force);
+    // 非 UTF-8 文件且尚未确认过编码时, 保存前让用户选择回写方式(每个文件只问一次)。
+    let encoding = fileStore.currentFile.encoding;
+    if (
+      !fileStore.currentFile.encodingResolved &&
+      encoding &&
+      !encoding.toLowerCase().startsWith('utf')
+    ) {
+      const label = encodingLabel(encoding);
+      const keepOriginal = await confirm(
+        `文件原为 ${label} 编码。保存时如何写入？`,
+        {
+          title: '编码选择',
+          kind: 'warning',
+          okLabel: `按原编码（${label}）保存`,
+          cancelLabel: '转为 UTF-8 保存',
+        },
+      );
+      encoding = keepOriginal ? encoding : 'utf-8';
+      fileStore.currentFile.encoding = encoding;
+      fileStore.currentFile.encodingResolved = true;
+    }
+
+    return saveDocument(
+      path,
+      fileStore.currentFile.content,
+      expectedLastModifiedMs,
+      force,
+      encoding,
+    );
   }
 
   async function saveCurrentDocument(force = false): Promise<boolean> {
+    // 防重入：菜单加速键与前端 keydown 会并发触发保存，这里合并为一次。
+    if (saveInProgress) {
+      return false;
+    }
+    saveInProgress = true;
+    try {
+      return await saveCurrentDocumentInternal(force);
+    } finally {
+      saveInProgress = false;
+    }
+  }
+
+  async function saveCurrentDocumentInternal(force = false): Promise<boolean> {
     const currentFile = fileStore.currentFile;
     if (!currentFile.path) {
       return saveCurrentDocumentAs();
@@ -166,7 +235,7 @@ export function useDocumentSession(options: DocumentSessionOptions) {
         if (!confirmed) {
           return false;
         }
-        return saveCurrentDocument(true);
+        return saveCurrentDocumentInternal(true);
       }
 
       console.error('Failed to save document:', appError.message);
@@ -243,7 +312,7 @@ export function useDocumentSession(options: DocumentSessionOptions) {
       return;
     }
 
-    const loaded = await loadDocumentFromPath(currentPath);
+    const loaded = await loadDocumentFromPath(currentPath, false);
     if (loaded) {
       showExternalWarning('已同步外部修改');
     }

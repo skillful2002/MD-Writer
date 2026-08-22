@@ -5,11 +5,15 @@ export interface DocumentOpenResult {
   path: string;
   content: string;
   lastModifiedMs: number;
+  /** 文件实际解码所用的编码名称(如 "utf-8" / "gb18030") */
+  encoding: string;
 }
 
 export interface DocumentSaveResult {
   path: string;
   lastModifiedMs: number;
+  /** 回写时实际使用的编码名称 */
+  encoding: string;
 }
 
 export interface DocumentImageImportResult {
@@ -33,12 +37,14 @@ export async function saveDocument(
   content: string,
   expectedLastModifiedMs?: number | null,
   force = false,
+  encoding?: string,
 ) {
   return invokeCommand<DocumentSaveResult>(TAURI_COMMANDS.saveDocument, {
     path,
     content,
     expectedLastModifiedMs,
     force,
+    encoding,
   });
 }
 
