@@ -51,7 +51,7 @@ const DEFAULT_SETTINGS: Settings = {
   activeThemeId: 'default-light',
   customThemes: [],
   fontSize: 14,
-  fontFamily: 'JetBrains Mono',
+  fontFamily: 'system-ui',
   autoSave: false,
   autoSaveInterval: 30,
   showLineNumbers: false,

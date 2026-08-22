@@ -1,4 +1,5 @@
 pub mod document;
+pub mod fonts;
 pub mod image;
 pub mod workspace;
 pub mod window;
@@ -16,3 +17,4 @@ pub use window::{
     apply_macos_window_background, attach_close_interceptor, consume_window_open_request,
     open_editor_window, print_document, reveal_in_finder, set_window_background_color,
 };
+pub use fonts::list_system_fonts;

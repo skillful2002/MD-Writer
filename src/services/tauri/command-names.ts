@@ -21,6 +21,7 @@ export const TAURI_COMMANDS = {
   trashWorkspaceEntry: 'trash_workspace_entry',
   unwatchWorkspace: 'unwatch_workspace',
   watchWorkspace: 'watch_workspace',
+  listSystemFonts: 'list_system_fonts',
 } as const;
 
 export type TauriCommandName = (typeof TAURI_COMMANDS)[keyof typeof TAURI_COMMANDS];

@@ -343,7 +343,8 @@ pub fn run() {
             reveal_startup_open_log,
             print_document,
             reveal_in_finder,
-            set_window_background_color
+            set_window_background_color,
+            list_system_fonts
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
