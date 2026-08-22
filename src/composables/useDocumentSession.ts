@@ -7,6 +7,7 @@ import { useFileStore } from '../stores/file';
 import { useSettingsStore } from '../stores/settings';
 import { useRecentFilesStore } from '../stores/recentFiles';
 import { basename, dirname } from '../utils/path';
+import { CODE_FILE_EXTENSIONS, languageFromPath } from '../utils/code-language';
 
 export interface AutoSaveStatus {
   message: string;
@@ -46,7 +47,8 @@ export function useDocumentSession(options: DocumentSessionOptions) {
   }
 
   function applyLoadedDocument(document: DocumentOpenResult) {
-    fileStore.setFile(document.content, document.path, document.lastModifiedMs);
+    const language = languageFromPath(document.path);
+    fileStore.setFile(document.content, document.path, document.lastModifiedMs, language);
   }
 
   async function confirmDiscardUnsavedChanges() {
@@ -120,7 +122,11 @@ export function useDocumentSession(options: DocumentSessionOptions) {
   async function handleOpenDocument() {
     const selected = await open({
       multiple: false,
-      filters: [{ name: 'Markdown', extensions: ['md', 'markdown', 'txt'] }],
+      filters: [
+        { name: 'Markdown', extensions: ['md', 'markdown', 'txt'] },
+        { name: 'Code', extensions: CODE_FILE_EXTENSIONS },
+        { name: 'All', extensions: ['*'] },
+      ],
     });
     if (selected && typeof selected === 'string') {
       // 通过菜单直接打开的文件：打开即记入历史（规则 1）

@@ -1,7 +1,7 @@
 import { invokeCommand } from './client';
 import { TAURI_COMMANDS } from './command-names';
 
-export type WorkspaceEntryKind = 'directory' | 'markdown' | 'text' | 'image';
+export type WorkspaceEntryKind = 'directory' | 'markdown' | 'text' | 'image' | 'code';
 export type WorkspaceEntryCreateKind = 'file' | 'folder';
 
 export interface WorkspaceEntry {

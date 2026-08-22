@@ -12,7 +12,99 @@ import type { Node as PMNode } from '@tiptap/pm/model';
 import { TextSelection } from '@tiptap/pm/state';
 import { common, createLowlight } from 'lowlight';
 
+// 补充 lowlight `common` 未携带、但本项目需要支持的常见语言 grammar。
+// 这些均来自 highlight.js 全量包（highlight.js/lib/languages/*），本机实测存在。
+import dart from 'highlight.js/lib/languages/dart';
+import scala from 'highlight.js/lib/languages/scala';
+import clojure from 'highlight.js/lib/languages/clojure';
+import elixir from 'highlight.js/lib/languages/elixir';
+import erlang from 'highlight.js/lib/languages/erlang';
+import haskell from 'highlight.js/lib/languages/haskell';
+import ocaml from 'highlight.js/lib/languages/ocaml';
+import fortran from 'highlight.js/lib/languages/fortran';
+import matlab from 'highlight.js/lib/languages/matlab';
+import groovy from 'highlight.js/lib/languages/groovy';
+import nginx from 'highlight.js/lib/languages/nginx';
+import dockerfile from 'highlight.js/lib/languages/dockerfile';
+import cmake from 'highlight.js/lib/languages/cmake';
+import properties from 'highlight.js/lib/languages/properties';
+import protobuf from 'highlight.js/lib/languages/protobuf';
+import nim from 'highlight.js/lib/languages/nim';
+import crystal from 'highlight.js/lib/languages/crystal';
+import fsharp from 'highlight.js/lib/languages/fsharp';
+import lisp from 'highlight.js/lib/languages/lisp';
+import julia from 'highlight.js/lib/languages/julia';
+import powershell from 'highlight.js/lib/languages/powershell';
+import tcl from 'highlight.js/lib/languages/tcl';
+import verilog from 'highlight.js/lib/languages/verilog';
+import vhdl from 'highlight.js/lib/languages/vhdl';
+import coffeescript from 'highlight.js/lib/languages/coffeescript';
+import actionscript from 'highlight.js/lib/languages/actionscript';
+import stan from 'highlight.js/lib/languages/stan';
+import mercury from 'highlight.js/lib/languages/mercury';
+import smalltalk from 'highlight.js/lib/languages/smalltalk';
+import x86asm from 'highlight.js/lib/languages/x86asm';
+import inform7 from 'highlight.js/lib/languages/inform7';
+import ebnf from 'highlight.js/lib/languages/ebnf';
+import gams from 'highlight.js/lib/languages/gams';
+import llvm from 'highlight.js/lib/languages/llvm';
+import qml from 'highlight.js/lib/languages/qml';
+import vala from 'highlight.js/lib/languages/vala';
+import ada from 'highlight.js/lib/languages/ada';
+import sas from 'highlight.js/lib/languages/sas';
+import stata from 'highlight.js/lib/languages/stata';
+import pgsql from 'highlight.js/lib/languages/pgsql';
+import basic from 'highlight.js/lib/languages/basic';
+import makefile from 'highlight.js/lib/languages/makefile';
+import dos from 'highlight.js/lib/languages/dos';
+
 const lowlight = createLowlight(common);
+
+lowlight.register({
+  dart,
+  scala,
+  clojure,
+  elixir,
+  erlang,
+  haskell,
+  ocaml,
+  fortran,
+  matlab,
+  groovy,
+  nginx,
+  dockerfile,
+  cmake,
+  properties,
+  protobuf,
+  nim,
+  crystal,
+  fsharp,
+  lisp,
+  julia,
+  powershell,
+  tcl,
+  verilog,
+  vhdl,
+  coffeescript,
+  actionscript,
+  stan,
+  mercury,
+  smalltalk,
+  x86asm,
+  inform7,
+  ebnf,
+  gams,
+  llvm,
+  qml,
+  vala,
+  ada,
+  sas,
+  stata,
+  pgsql,
+  basic,
+  makefile,
+  dos,
+});
 
 export function normalizeCodeBlockLanguage(language: string | null | undefined): string | null {
   const normalized = language?.trim().toLowerCase() ?? '';

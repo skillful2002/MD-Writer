@@ -57,6 +57,7 @@ pub enum WorkspaceEntryKind {
     Markdown,
     Text,
     Image,
+    Code,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]

@@ -128,17 +128,33 @@ function createEditor(content: string) {
     },
   });
 
-  // 解析 markdown 并设置文档
+  // 代码模式判断：当前文件是代码文件（language 非空）时，整篇作为单个带语言标识的 code block，
+  // 复用 CustomCodeBlock 的 lowlight 高亮与语言切换 UI；否则按 Markdown 解析。
+  const codeLanguage = fileStore.currentFile.language;
+
   if (content) {
-    const doc = parseMarkdown(e.schema, content);
-    e.commands.setContent(doc.toJSON());
+    if (codeLanguage) {
+      e.commands.setContent({
+        type: 'doc',
+        content: [
+          {
+            type: 'codeBlock',
+            attrs: { language: codeLanguage },
+            content: [{ type: 'text', text: content }],
+          },
+        ],
+      });
+    } else {
+      const doc = parseMarkdown(e.schema, content);
+      e.commands.setContent(doc.toJSON());
+    }
   }
 
   editor.value = e;
 
   // 同步基线：setContent + appendTransaction 完成后，序列化结果作为 store 基准
   // 避免 parser/serializer round-trip 差异导致误判 dirty
-  const baseline = serializeMarkdown(e.state.doc);
+  const baseline = codeLanguage ? e.state.doc.textContent : serializeMarkdown(e.state.doc);
 
   fileStore.setContent(baseline);
 }
@@ -146,13 +162,16 @@ function createEditor(content: string) {
 // ── 更新回调 ──────────────────────────────────────────────────
 
 const debouncedUpdate = debounce((ed: TiptapEditor) => {
-  const markdown = serializeMarkdown(ed.state.doc);
+  // 代码模式：整篇即单个 code block，直接用 textContent 作为纯文本写回。
+  // 不走 serializeMarkdown（那会把 code block 包成 ``` ``` ``` 围栏，破坏源码）。
+  const isCode = !!fileStore.currentFile.language;
+  const nextContent = isCode ? ed.state.doc.textContent : serializeMarkdown(ed.state.doc);
   // 规范化比较：序列化器总是追加 \n，store 初始值可能是 ''
   const normalizedStored = fileStore.currentFile.content.replace(/\n+$/, '');
-  const normalizedNew = markdown.replace(/\n+$/, '');
+  const normalizedNew = nextContent.replace(/\n+$/, '');
   if (normalizedNew !== normalizedStored) {
     fileStore.markUserEdit();
-    fileStore.setContent(markdown);
+    fileStore.setContent(nextContent);
   }
 
   const wordCount = getEditorWordCount(ed);

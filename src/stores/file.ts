@@ -5,6 +5,8 @@ export interface FileState {
   content: string;
   isDirty: boolean;
   lastModifiedTime: number | null;
+  /** 代码文件的 lowlight 语言 id；null 表示非代码文件或降级为纯文本 */
+  language: string | null;
 }
 
 interface FileStoreState {
@@ -21,6 +23,7 @@ function createEmptyFileState(): FileState {
     content: '',
     isDirty: false,
     lastModifiedTime: null,
+    language: null,
   };
 }
 
@@ -52,12 +55,18 @@ export const useFileStore = defineStore('file', {
       this.currentFile.isDirty = true;
     },
 
-    setFile(content: string, path: string | null, lastModifiedTime: number | null = null) {
+    setFile(
+      content: string,
+      path: string | null,
+      lastModifiedTime: number | null = null,
+      language: string | null = null,
+    ) {
       this.currentFile = {
         path,
         content,
         isDirty: false,
         lastModifiedTime,
+        language,
       };
       // 重置编辑标志
       this.hasUserEdit = false;

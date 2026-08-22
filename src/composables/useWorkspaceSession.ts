@@ -21,6 +21,7 @@ export interface TreeNode {
   is_md: boolean;
   is_txt: boolean;
   is_image: boolean;
+  is_code: boolean;
   expanded: boolean;
   children: TreeNode[] | null;
 }
@@ -39,6 +40,7 @@ function workspaceEntryToTreeNode(entry: WorkspaceEntry): TreeNode {
     is_md: entry.kind === 'markdown',
     is_txt: entry.kind === 'text',
     is_image: entry.kind === 'image',
+    is_code: entry.kind === 'code',
     expanded: false,
     children: entry.kind === 'directory' ? null : [],
   };

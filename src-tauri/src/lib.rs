@@ -81,13 +81,24 @@ fn reveal_startup_open_log(app: tauri::AppHandle) -> Result<String, error::AppEr
 }
 
 fn supported_open_path(path: &Path) -> bool {
-    matches!(
-        path.extension()
-            .and_then(|extension| extension.to_str())
-            .map(str::to_ascii_lowercase)
-            .as_deref(),
-        Some("md" | "markdown" | "txt")
-    )
+    let extension = path
+        .extension()
+        .and_then(|extension| extension.to_str())
+        .map(str::to_ascii_lowercase);
+
+    match extension.as_deref() {
+        Some("md" | "markdown" | "txt") => true,
+        Some(ext) => crate::commands::workspace::is_code_extension(ext),
+        None => {
+            // 无扩展名的特殊文件名（Makefile / Dockerfile 等）
+            let file_name = path
+                .file_name()
+                .and_then(|value| value.to_str())
+                .map(|value| value.to_ascii_lowercase())
+                .unwrap_or_default();
+            matches!(file_name.as_str(), "makefile" | "dockerfile" | "cmakelists.txt")
+        }
+    }
 }
 
 fn startup_log_path(app: Option<&tauri::AppHandle>) -> PathBuf {

@@ -38,6 +38,7 @@ const icon = computed(() => {
   if (props.node.is_dir) return props.node.expanded ? '📂' : '📁';
   if (props.node.is_md) return '📝';
   if (props.node.is_image) return '🖼️';
+  if (props.node.is_code) return '💻';
   return '📄';
 });
 

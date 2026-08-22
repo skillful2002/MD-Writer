@@ -4,6 +4,7 @@ import { message } from '../services/tauri/dialog';
 import type { AppOpenPathsPayload } from '../services/tauri/events';
 import { listenAppOpenPaths, listenWindowCloseRequested } from '../services/tauri/events';
 import { listenCurrentWebviewDragDrop } from '../services/tauri/webview';
+import { CODE_FILE_DROP_PATTERN, isCodeFilePath } from '../utils/code-language';
 import {
   consumeStartupOpenRequest,
   consumeWindowOpenRequest,
@@ -115,7 +116,9 @@ export function useAppWindowSession(options: AppWindowSessionOptions) {
       if (event.payload.type !== 'drop') {
         return;
       }
-      const documentPath = event.payload.paths.find((path) => /\.(md|markdown|txt)$/i.test(path));
+      const documentPath = event.payload.paths.find(
+        (path) => /\.(md|markdown|txt)$/i.test(path) || CODE_FILE_DROP_PATTERN.test(path) || isCodeFilePath(path),
+      );
       if (documentPath) {
         await options.openDocument(documentPath);
       }
