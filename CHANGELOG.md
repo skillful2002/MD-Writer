@@ -2,6 +2,20 @@
 
 本文档记录 MarkdownEd 各版本的变更内容，格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/)。
 
+## [v1.1.0]
+
+### 新增
+- **非 UTF-8 文件编码支持**：打开以 GBK / GB2312 / GB18030 / Big5 等编码保存的 Markdown / 文本文件时，不再报 `stream did not contain valid UTF-8`，会自动检测并解码为 UTF-8 显示。
+- **保存时编码选择**：非 UTF-8 文件保存时弹出选择框，可指定「按原编码保存」或「转为 UTF-8 保存」，每个文件仅询问一次；之后保存不再重复提示。
+- **macOS Apple Silicon 打包脚本**：重写 `scripts/pack-macos-dmg.sh`，对齐 Windows `build-win.bat` 的四步结构（依赖检查 → 清理 → 编译 → 产物校验），显式指定 `--target aarch64-apple-darwin`，并保留 hdiutil 兜底逻辑绕开 create-dmg / osascript 的 Finder 权限坑。
+
+### 修复
+- **保存并发导致编码选择框重复弹出**：一次 Cmd/Ctrl+S 同时触发系统菜单加速键与前端全局快捷键两条保存路径，造成编码框、强制覆盖框连续弹出。已加保存防重入锁，并发保存合并为一次，每个文件仅弹一次编码选择框。
+- **外部同步重载重置编码选择状态**：保存后文件变更观察器自动重载会把编码选择标记重置，导致保存循环弹框。已区分「主动打开新文件」与「外部同步重载」，仅前者重置状态。
+
+### 优化
+- 打开非 UTF-8 文件时提示文案显示易懂的编码格式（如 `GB18030（中文，兼容 GBK / GB2312）`），让用户清楚原文件编码。
+
 ## [v1.0.1]
 
 ### 新增
