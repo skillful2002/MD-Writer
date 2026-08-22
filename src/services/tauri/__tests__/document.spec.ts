@@ -17,6 +17,7 @@ describe('tauri document service', () => {
       path: '/tmp/demo.md',
       content: '# Demo',
       lastModifiedMs: 42,
+      encoding: 'utf-8',
     };
     invokeCommandMock.mockResolvedValueOnce(result);
 
@@ -32,6 +33,7 @@ describe('tauri document service', () => {
     const result = {
       path: '/tmp/demo.md',
       lastModifiedMs: 100,
+      encoding: 'utf-8',
     };
     invokeCommandMock.mockResolvedValueOnce(result);
 
@@ -43,6 +45,7 @@ describe('tauri document service', () => {
       content: '# Updated',
       expectedLastModifiedMs: 99,
       force: true,
+      encoding: undefined,
     });
   });
 
@@ -56,6 +59,7 @@ describe('tauri document service', () => {
       content: '# Updated',
       expectedLastModifiedMs: undefined,
       force: false,
+      encoding: undefined,
     });
   });
 

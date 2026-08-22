@@ -13,6 +13,9 @@ const fileStoreState = {
     content: '',
     isDirty: false,
     lastModifiedTime: null as number | null,
+    language: null as string | null,
+    encoding: 'utf-8',
+    encodingResolved: true,
   },
   setLoading: vi.fn(),
   setFile: vi.fn((content: string, path: string | null, lastModifiedTime: number | null) => {
@@ -21,6 +24,9 @@ const fileStoreState = {
       content,
       isDirty: false,
       lastModifiedTime,
+      language: null,
+      encoding: 'utf-8',
+      encodingResolved: true,
     };
   }),
   markSaved: vi.fn((lastModifiedTime: number | null) => {
@@ -28,6 +34,10 @@ const fileStoreState = {
     fileStoreState.currentFile.lastModifiedTime = lastModifiedTime;
   }),
   reset: vi.fn(),
+};
+
+const recentFilesStoreState = {
+  add: vi.fn(),
 };
 
 const settingsStoreState = {
@@ -51,6 +61,10 @@ vi.mock('../../services/tauri/document', () => ({
 
 vi.mock('../../stores/file', () => ({
   useFileStore: () => fileStoreState,
+}));
+
+vi.mock('../../stores/recentFiles', () => ({
+  useRecentFilesStore: () => recentFilesStoreState,
 }));
 
 vi.mock('../../stores/settings', () => ({
@@ -78,11 +92,15 @@ describe('useDocumentSession', () => {
       content: '',
       isDirty: false,
       lastModifiedTime: null,
+      language: null,
+      encoding: 'utf-8',
+      encodingResolved: true,
     };
     fileStoreState.setLoading.mockReset();
     fileStoreState.setFile.mockClear();
     fileStoreState.markSaved.mockClear();
     fileStoreState.reset.mockClear();
+    recentFilesStoreState.add.mockClear();
   });
 
   it('loads document content and mtime together', async () => {
@@ -90,6 +108,7 @@ describe('useDocumentSession', () => {
       path: '/tmp/demo.md',
       content: '# title',
       lastModifiedMs: 123,
+      encoding: 'utf-8',
     });
 
     const { useDocumentSession } = await import('../useDocumentSession');
@@ -100,7 +119,7 @@ describe('useDocumentSession', () => {
     await expect(session.loadDocumentFromPath('/tmp/demo.md')).resolves.toBe(true);
     expect(fileStoreState.setLoading).toHaveBeenNthCalledWith(1, true);
     expect(fileStoreState.setLoading).toHaveBeenLastCalledWith(false);
-    expect(fileStoreState.setFile).toHaveBeenCalledWith('# title', '/tmp/demo.md', 123);
+    expect(fileStoreState.setFile).toHaveBeenCalledWith('# title', '/tmp/demo.md', 123, null, 'utf-8', true);
   });
 
   it('retries save with force after a document conflict is confirmed', async () => {
@@ -109,12 +128,16 @@ describe('useDocumentSession', () => {
       content: 'draft',
       isDirty: true,
       lastModifiedTime: 1000,
+      language: null,
+      encoding: 'utf-8',
+      encodingResolved: true,
     };
     saveDocumentMock
       .mockRejectedValueOnce({ code: 'document_conflict', message: 'conflict' })
       .mockResolvedValueOnce({
         path: '/tmp/demo.md',
         lastModifiedMs: 1500,
+        encoding: 'utf-8',
       });
     confirmMock.mockResolvedValueOnce(true);
 
@@ -124,8 +147,8 @@ describe('useDocumentSession', () => {
     });
 
     await expect(session.saveCurrentDocument()).resolves.toBe(true);
-    expect(saveDocumentMock).toHaveBeenNthCalledWith(1, '/tmp/demo.md', 'draft', 1000, false);
-    expect(saveDocumentMock).toHaveBeenNthCalledWith(2, '/tmp/demo.md', 'draft', 1000, true);
+    expect(saveDocumentMock).toHaveBeenNthCalledWith(1, '/tmp/demo.md', 'draft', 1000, false, 'utf-8');
+    expect(saveDocumentMock).toHaveBeenNthCalledWith(2, '/tmp/demo.md', 'draft', 1000, true, 'utf-8');
     expect(fileStoreState.markSaved).toHaveBeenCalledWith(1500);
   });
 
@@ -135,11 +158,15 @@ describe('useDocumentSession', () => {
       content: 'draft',
       isDirty: true,
       lastModifiedTime: null,
+      language: null,
+      encoding: 'utf-8',
+      encodingResolved: true,
     };
     saveMock.mockResolvedValue('/tmp/demo.md');
     saveDocumentMock.mockResolvedValue({
       path: '/tmp/demo.md',
       lastModifiedMs: 2000,
+      encoding: 'utf-8',
     });
 
     const { useDocumentSession } = await import('../useDocumentSession');
@@ -148,7 +175,7 @@ describe('useDocumentSession', () => {
     });
 
     await expect(session.saveCurrentDocument()).resolves.toBe(true);
-    expect(saveDocumentMock).toHaveBeenCalledWith('/tmp/demo.md', 'draft', null, true);
+    expect(saveDocumentMock).toHaveBeenCalledWith('/tmp/demo.md', 'draft', null, true, 'utf-8');
     expect(fileStoreState.setFile).toHaveBeenCalledWith('draft', '/tmp/demo.md', 2000);
     expect(fileStoreState.markSaved).toHaveBeenCalledWith(2000);
   });
@@ -160,11 +187,15 @@ describe('useDocumentSession', () => {
       content: 'old',
       isDirty: false,
       lastModifiedTime: 1000,
+      language: null,
+      encoding: 'utf-8',
+      encodingResolved: true,
     };
     openDocumentMock.mockResolvedValue({
       path: '/tmp/demo.md',
       content: 'updated',
       lastModifiedMs: 1500,
+      encoding: 'utf-8',
     });
 
     const { useDocumentSession } = await import('../useDocumentSession');
@@ -179,7 +210,7 @@ describe('useDocumentSession', () => {
     });
 
     expect(openDocumentMock).toHaveBeenCalledWith('/tmp/demo.md');
-    expect(fileStoreState.setFile).toHaveBeenCalledWith('updated', '/tmp/demo.md', 1500);
+    expect(fileStoreState.setFile).toHaveBeenCalledWith('updated', '/tmp/demo.md', 1500, null, 'utf-8', true);
     expect(session.externalFileWarning.value).toBe('已同步外部修改');
 
     vi.clearAllTimers();
@@ -193,6 +224,9 @@ describe('useDocumentSession', () => {
       content: 'draft',
       isDirty: true,
       lastModifiedTime: 1000,
+      language: null,
+      encoding: 'utf-8',
+      encodingResolved: true,
     };
 
     const { useDocumentSession } = await import('../useDocumentSession');
@@ -221,6 +255,9 @@ describe('useDocumentSession', () => {
       content: 'draft',
       isDirty: false,
       lastModifiedTime: 1000,
+      language: null,
+      encoding: 'utf-8',
+      encodingResolved: true,
     };
 
     const { useDocumentSession } = await import('../useDocumentSession');
