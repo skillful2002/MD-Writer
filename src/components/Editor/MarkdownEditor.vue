@@ -198,6 +198,11 @@ function updateBubbleMenu(ed: TiptapEditor) {
     bubbleMenuRef.value?.update(false, 0, 0, {});
     return;
   }
+  // 选中图片节点时：浮动工具条对图片无意义，不弹出（图片有自己的缩放手柄与源码编辑）
+  if (ed.isActive('image')) {
+    bubbleMenuRef.value?.update(false, 0, 0, {});
+    return;
+  }
   const { from, to, empty } = ed.state.selection;
 
   // 表格内（光标位于单元格中）：即使选区为空也弹出表格工具条

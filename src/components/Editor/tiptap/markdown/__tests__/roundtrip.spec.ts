@@ -64,7 +64,13 @@ function createTestSchema(): Schema {
       },
       image: {
         inline: true, group: 'inline',
-        attrs: { src: { default: '' }, alt: { default: '' }, title: { default: null } },
+        attrs: {
+          src: { default: '' },
+          alt: { default: '' },
+          title: { default: null },
+          width: { default: null },
+          height: { default: null },
+        },
         parseDOM: [{ tag: 'img' }], toDOM: () => ['img'],
       },
       mathInline: {
@@ -261,6 +267,21 @@ describe('Round-trip: parse → serialize', () => {
 
     it('inline image', () => {
       const md = '![doocs](https://cdn-doocs.oss-cn-shenzhen.aliyuncs.com/gh/doocs/md/images/logo-2.png)\n';
+      expect(roundTrip(md)).toBe(normalize(md));
+    });
+
+    it('inline image with editor width (#width fragment) round-trips', () => {
+      const md = '![cover](./images/cover.png#width=320)\n';
+      expect(roundTrip(md)).toBe(normalize(md));
+    });
+
+    it('inline image with width and height (#width&#height) round-trips', () => {
+      const md = '![cover](./images/cover.png#width=320&height=200)\n';
+      expect(roundTrip(md)).toBe(normalize(md));
+    });
+
+    it('inline image with only height (#height) round-trips', () => {
+      const md = '![cover](./images/cover.png#height=180)\n';
       expect(roundTrip(md)).toBe(normalize(md));
     });
 

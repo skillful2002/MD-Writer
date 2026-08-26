@@ -17,13 +17,28 @@ beforeEach(() => {
 
 describe('formatImageMarkdown', () => {
   it('formats image markdown without title', () => {
-    expect(formatImageMarkdown({ src: '/demo.png', alt: 'demo', title: null }))
+    expect(formatImageMarkdown({ src: '/demo.png', alt: 'demo', title: null, width: null, height: null }))
       .toBe('![demo](/demo.png)');
   });
 
   it('formats image markdown with title', () => {
-    expect(formatImageMarkdown({ src: '/demo.png', alt: 'demo', title: 'cover' }))
+    expect(formatImageMarkdown({ src: '/demo.png', alt: 'demo', title: 'cover', width: null, height: null }))
       .toBe('![demo](/demo.png "cover")');
+  });
+
+  it('encodes width into URL fragment', () => {
+    expect(formatImageMarkdown({ src: '/demo.png', alt: 'demo', title: null, width: 300, height: null }))
+      .toBe('![demo](/demo.png#width=300)');
+  });
+
+  it('encodes width and height together', () => {
+    expect(formatImageMarkdown({ src: '/demo.png', alt: 'demo', title: null, width: 300, height: 240 }))
+      .toBe('![demo](/demo.png#width=300&height=240)');
+  });
+
+  it('encodes only height', () => {
+    expect(formatImageMarkdown({ src: '/demo.png', alt: 'demo', title: null, width: null, height: 180 }))
+      .toBe('![demo](/demo.png#height=180)');
   });
 });
 
@@ -33,6 +48,8 @@ describe('parseImageMarkdown', () => {
       src: '/demo.png',
       alt: 'demo',
       title: null,
+      width: null,
+      height: null,
     });
   });
 
@@ -41,6 +58,58 @@ describe('parseImageMarkdown', () => {
       src: '/demo.png',
       alt: 'demo',
       title: 'cover',
+      width: null,
+      height: null,
+    });
+  });
+
+  it('parses editor width from URL fragment (#width=N)', () => {
+    expect(parseImageMarkdown('![demo](/demo.png#width=300)')).toEqual({
+      src: '/demo.png',
+      alt: 'demo',
+      title: null,
+      width: 300,
+      height: null,
+    });
+  });
+
+  it('parses width together with title', () => {
+    expect(parseImageMarkdown('![demo](/demo.png#width=240 "cover")')).toEqual({
+      src: '/demo.png',
+      alt: 'demo',
+      title: 'cover',
+      width: 240,
+      height: null,
+    });
+  });
+
+  it('parses width and height from fragment', () => {
+    expect(parseImageMarkdown('![demo](/demo.png#width=300&height=240)')).toEqual({
+      src: '/demo.png',
+      alt: 'demo',
+      title: null,
+      width: 300,
+      height: 240,
+    });
+  });
+
+  it('parses height before width regardless of order', () => {
+    expect(parseImageMarkdown('![demo](/demo.png#height=180&width=220)')).toEqual({
+      src: '/demo.png',
+      alt: 'demo',
+      title: null,
+      width: 220,
+      height: 180,
+    });
+  });
+
+  it('parses only height from fragment', () => {
+    expect(parseImageMarkdown('![demo](/demo.png#height=180)')).toEqual({
+      src: '/demo.png',
+      alt: 'demo',
+      title: null,
+      width: null,
+      height: 180,
     });
   });
 

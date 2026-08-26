@@ -15,12 +15,41 @@ export interface ImageMarkdownAttrs {
   src: string;
   alt: string;
   title: string | null;
+  /**
+   * 编辑器内图片显示宽度（像素）。仅持久化到图片 URL 的 fragment
+   * （如 `image.png#width=300`），不影响标准 Markdown 查看器——浏览器
+   * 渲染时会忽略 fragment，图片照常显示且按自然尺寸布局。
+   */
+  width: number | null;
+  /**
+   * 编辑器内图片显示高度（像素）。同样编码进 fragment
+   * （如 `image.png#height=240`）。与 width 可同时存在（用 & 连接）。
+   */
+  height: number | null;
+}
+
+/**
+ * 把宽/高编码进图片 URL 的 fragment，是最低侵入的标准 Markdown 兼容方案：
+ * - 标准查看器：浏览器请求资源前会剥离 fragment，`image.png#width=300&height=240`
+ *   等价于 `image.png`，图片正常显示。
+ * - 持久化：fragment 随文档保存，重新打开后可解析还原。
+ * 仅当 width/height 有效（>0）时才写入对应字段；两者均无效则不加 fragment。
+ */
+export function encodeImageSize(src: string, width: number | null, height: number | null): string {
+  const base = (src || '').replace(/#(?:width|height)=\d+(?:&(?:width|height)=\d+)?$/, '');
+  const parts: string[] = [];
+  if (width && width > 0) parts.push(`width=${width}`);
+  if (height && height > 0) parts.push(`height=${height}`);
+  if (parts.length > 0) {
+    return `${base}#${parts.join('&')}`;
+  }
+  return base;
 }
 
 export function formatImageMarkdown(attrs: ImageMarkdownAttrs): string {
   const alt = attrs.alt || '';
-  const src = attrs.src || '';
   const title = attrs.title?.replace(/"/g, '\\"') ?? '';
+  const src = encodeImageSize(attrs.src, attrs.width, attrs.height);
 
   if (title) {
     return `![${alt}](${src} "${title}")`;
@@ -45,15 +74,31 @@ export function parseImageMarkdown(markdown: string): ImageMarkdownAttrs | null 
     return null;
   }
 
-  const src = titleMatch.groups.src.trim();
-  if (!src) {
+  const rawSrc = titleMatch.groups.src.trim();
+  if (!rawSrc) {
     return null;
+  }
+
+  // 从 fragment 中分离出编辑器宽/高（如 `image.png#width=300&height=240`）
+  const hashIndex = rawSrc.indexOf('#');
+  let src = rawSrc;
+  let width: number | null = null;
+  let height: number | null = null;
+  if (hashIndex >= 0) {
+    src = rawSrc.slice(0, hashIndex);
+    const fragment = rawSrc.slice(hashIndex + 1);
+    const widthMatch = fragment.match(/(?:^|&)width=(?<width>\d+)/);
+    const heightMatch = fragment.match(/(?:^|&)height=(?<height>\d+)/);
+    if (widthMatch?.groups?.width) width = Number(widthMatch.groups.width);
+    if (heightMatch?.groups?.height) height = Number(heightMatch.groups.height);
   }
 
   return {
     src,
     alt,
     title: titleMatch.groups.title == null ? null : titleMatch.groups.title.replace(/\\"/g, '"'),
+    width,
+    height,
   };
 }
 
@@ -298,17 +343,62 @@ export function __resetLocalImageCacheForTests() {
 }
 
 export const CustomImage = Image.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      // 编辑器内显示宽度（px），持久化到 md 的 URL fragment（#width=N）。
+      // 不进 HTMLAttributes，避免污染导出的 HTML；仅作为节点内部属性。
+      width: {
+        default: null,
+        parseHTML: (element) => {
+          const raw = element.getAttribute('data-width');
+          const num = raw ? Number(raw) : null;
+          return num && num > 0 ? num : null;
+        },
+        renderHTML: () => ({}),
+      },
+    };
+  },
   addNodeView() {
     return ({ node, getPos, editor }) => {
       const dom = document.createElement('span');
       dom.className = 'mk-image-shell';
       dom.draggable = false;
 
+      // 图片画框：承载 <img> 与缩放手柄，作为手柄定位基准
+      const frame = document.createElement('span');
+      frame.className = 'mk-image-frame';
+
       const image = document.createElement('img');
       image.className = 'mk-image';
       image.loading = 'lazy';
       image.draggable = false;
-      dom.appendChild(image);
+      frame.appendChild(image);
+
+      // 缩放手柄（仅当图片被选中时由 CSS 激活，纯展示层交互）
+      const handleLeft = document.createElement('span');
+      handleLeft.className = 'mk-image-resize-handle handle-left';
+      handleLeft.setAttribute('aria-hidden', 'true');
+      const handleRight = document.createElement('span');
+      handleRight.className = 'mk-image-resize-handle handle-right';
+      handleRight.setAttribute('aria-hidden', 'true');
+      const handleTop = document.createElement('span');
+      handleTop.className = 'mk-image-resize-handle handle-top';
+      handleTop.setAttribute('aria-hidden', 'true');
+      const handleBottom = document.createElement('span');
+      handleBottom.className = 'mk-image-resize-handle handle-bottom';
+      handleBottom.setAttribute('aria-hidden', 'true');
+      // 右下角手柄：按图片固有比例同比例缩放宽度与高度
+      const handleCorner = document.createElement('span');
+      handleCorner.className = 'mk-image-resize-handle handle-corner';
+      handleCorner.setAttribute('aria-hidden', 'true');
+      frame.appendChild(handleLeft);
+      frame.appendChild(handleRight);
+      frame.appendChild(handleTop);
+      frame.appendChild(handleBottom);
+      frame.appendChild(handleCorner);
+
+      dom.appendChild(frame);
 
       const sourceText = document.createElement('div');
       sourceText.className = 'mk-image-source-text';
@@ -323,10 +413,19 @@ export const CustomImage = Image.extend({
         src: (node.attrs.src as string) || '',
         alt: (node.attrs.alt as string) || '',
         title: (node.attrs.title as string | null) ?? null,
+        width: typeof node.attrs.width === 'number' ? (node.attrs.width as number) : null,
+        height: typeof node.attrs.height === 'number' ? (node.attrs.height as number) : null,
       });
 
       let displayRequestId = 0;
       let displaySrc = '';
+
+      // 把节点 width/height 应用到展示层（不影响 md 文本，仅改 DOM 尺寸）。
+      // 仅当某维度被显式设置时才覆盖，未设置的维度保留自然尺寸。
+      function applySizeToView(width: number | null, height: number | null) {
+        image.style.width = (width && width > 0) ? `${width}px` : '';
+        image.style.height = (height && height > 0) ? `${height}px` : '';
+      }
 
       function syncView() {
         const attrs = getAttrs();
@@ -339,6 +438,8 @@ export const CustomImage = Image.extend({
 
         image.alt = attrs.alt;
         image.title = attrs.title ?? '';
+
+        applySizeToView(attrs.width, attrs.height);
 
         if (isRemoteImageSrc(attrs.src)) {
           const requestId = ++displayRequestId;
@@ -383,6 +484,8 @@ export const CustomImage = Image.extend({
           parsed.src === current.src
           && parsed.alt === current.alt
           && parsed.title === current.title
+          && parsed.width === current.width
+          && parsed.height === current.height
         ) {
           syncView();
           return;
@@ -410,6 +513,93 @@ export const CustomImage = Image.extend({
         dom.classList.remove('is-editing');
         dom.classList.remove('is-invalid');
         syncView();
+      }
+
+      // ── 拖拽缩放（写入节点 width/height 属性，持久化到 md 的 URL fragment）──
+      // - 左右手柄：只调宽度，互不锁定宽高比
+      // - 上下手柄：只调高度，互不锁定宽高比
+      // - 右下角手柄：按当前显示宽高比同比例缩放宽度与高度
+      // 任一维度未设置时保留自然尺寸。限制最小/最大值。
+      const MIN_SIZE = 40;
+      const MAX_SIZE = 4000;
+
+      function setSize(nextWidth: number | null, nextHeight: number | null) {
+        const current = getAttrs();
+        const clamp = (v: number | null) =>
+          (v == null || v <= 0) ? null : Math.max(MIN_SIZE, Math.min(MAX_SIZE, Math.round(v)));
+        const width = clamp(nextWidth);
+        const height = clamp(nextHeight);
+        if (width === current.width && height === current.height) {
+          return;
+        }
+        if (typeof getPos !== 'function') {
+          return;
+        }
+        const pos = getPos();
+        if (typeof pos !== 'number') {
+          return;
+        }
+        const tr = editor.state.tr.setNodeMarkup(pos, undefined, {
+          ...node.attrs,
+          width,
+          height,
+        });
+        editor.view.dispatch(tr);
+      }
+
+      function startResize(event: PointerEvent) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const handle = event.target as HTMLElement;
+        const rect = image.getBoundingClientRect();
+        const startX = event.clientX;
+        const startY = event.clientY;
+        const startWidth = rect.width;
+        const startHeight = rect.height;
+        const isHorizontal = handle.classList.contains('handle-left')
+          || handle.classList.contains('handle-right');
+        const isVertical = handle.classList.contains('handle-top')
+          || handle.classList.contains('handle-bottom');
+        const isCorner = handle.classList.contains('handle-corner');
+        const horizontalDir = handle.classList.contains('handle-left') ? -1 : 1;
+        const verticalDir = handle.classList.contains('handle-top') ? -1 : 1;
+        // 同比例缩放以图片左上角为锚点：缩放后图片右下角跟随鼠标，
+        // 宽度 = 鼠标X - 图片左边缘，高度按当前显示宽高比联动。
+        // 这样按下瞬间（鼠标在手柄处）scale 恰为 1，不会瞬间缩到极小。
+        const anchorLeft = rect.left;
+        const aspect = startWidth / startHeight || 1;
+        handle.setPointerCapture(event.pointerId);
+
+        const onMove = (moveEvent: PointerEvent) => {
+          if (isCorner) {
+            const nextWidth = moveEvent.clientX - anchorLeft;
+            const nextHeight = nextWidth / aspect;
+            setSize(nextWidth, nextHeight);
+            return;
+          }
+          const deltaX = moveEvent.clientX - startX;
+          const deltaY = moveEvent.clientY - startY;
+          const nextWidth = isHorizontal ? startWidth + horizontalDir * deltaX : null;
+          const nextHeight = isVertical ? startHeight + verticalDir * deltaY : null;
+          setSize(nextWidth, nextHeight);
+        };
+
+        const onUp = (upEvent: PointerEvent) => {
+          handle.releasePointerCapture(upEvent.pointerId);
+          handle.removeEventListener('pointermove', onMove);
+          handle.removeEventListener('pointerup', onUp);
+          editor.commands.focus();
+        };
+
+        handle.addEventListener('pointermove', onMove);
+        handle.addEventListener('pointerup', onUp);
+      }
+
+      for (const handle of [handleLeft, handleRight, handleTop, handleBottom, handleCorner]) {
+        handle.addEventListener('pointerdown', startResize);
+        handle.addEventListener('mousedown', (e) => e.stopPropagation());
+        handle.addEventListener('dragstart', (e) => e.preventDefault());
       }
 
       dom.addEventListener('dragstart', (event) => {

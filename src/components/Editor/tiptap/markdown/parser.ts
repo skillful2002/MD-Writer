@@ -248,10 +248,30 @@ function getTokenHandlers(schema: Schema): Record<string, TokenHandler> {
   // ── 图片 ──
 
   handlers.image = (state, token) => {
-    const src = token.attrGet('src') || '';
+    const rawSrc = token.attrGet('src') || '';
     const alt = token.content || token.children?.map(t => t.content).join('') || '';
     const title = token.attrGet('title') || null;
-    state.addNode(schema.nodes.image, { src, alt, title });
+    // 从 URL fragment 解析编辑器宽/高（#width=N&height=M），剥离后作为真实 src。
+    // 标准查看器会忽略 fragment，因此不影响其它渲染器。
+    let src = rawSrc;
+    let width: number | null = null;
+    let height: number | null = null;
+    const hashIndex = rawSrc.indexOf('#');
+    if (hashIndex >= 0) {
+      src = rawSrc.slice(0, hashIndex);
+      const fragment = rawSrc.slice(hashIndex + 1);
+      const widthMatch = fragment.match(/(?:^|&)width=(\d+)/);
+      const heightMatch = fragment.match(/(?:^|&)height=(\d+)/);
+      if (widthMatch) width = Number(widthMatch[1]);
+      if (heightMatch) height = Number(heightMatch[1]);
+    }
+    state.addNode(schema.nodes.image, {
+      src,
+      alt,
+      title,
+      width: width && width > 0 ? width : null,
+      height: height && height > 0 ? height : null,
+    });
   };
 
   // ── 行内标记 ──

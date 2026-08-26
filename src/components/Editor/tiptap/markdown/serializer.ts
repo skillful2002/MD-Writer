@@ -309,8 +309,20 @@ const nodeSerializers: Record<string, NodeSerializer> = {
 
   image(state, node) {
     const alt = node.attrs.alt || '';
-    const src = node.attrs.src || '';
+    const srcBase = node.attrs.src || '';
     const title = node.attrs.title;
+    // 编辑器内宽/高持久化到 URL fragment（#width=N&height=M）：对标准查看器
+    // 透明，浏览器请求资源前会剥离 fragment，图片按自然尺寸显示。
+    const width = typeof node.attrs.width === 'number' && node.attrs.width > 0
+      ? node.attrs.width
+      : null;
+    const height = typeof node.attrs.height === 'number' && node.attrs.height > 0
+      ? node.attrs.height
+      : null;
+    const fragParts: string[] = [];
+    if (width) fragParts.push(`width=${width}`);
+    if (height) fragParts.push(`height=${height}`);
+    const src = fragParts.length > 0 ? `${srcBase}#${fragParts.join('&')}` : srcBase;
     if (title) {
       state.write(`![${alt}](${src} "${escapeLinkTitle(title as string)}")`);
     } else {
