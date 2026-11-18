@@ -17,7 +17,9 @@
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "format": "prettier --write \"src/**/*.{ts,vue,css}\"",
-    "pack:mac": "bash scripts/pack-macos-dmg.sh"
+    "pack:mac": "bash scripts/pack-macos-dmg.sh",
+    "pack:mac:intel": "MD_ED_MAC_ARCH=x86_64-apple-darwin bash scripts/pack-macos-dmg.sh",
+    "pack:mac:all": "bash scripts/pack-macos-dmg.sh && npm run pack:mac:intel"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.11.0",
