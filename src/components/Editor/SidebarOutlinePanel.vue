@@ -165,7 +165,7 @@ watch(() => settingsStore.settings.outlineExpanded, applyDefault);
       </div>
     </div>
 
-    <div class="flex-1 overflow-y-auto p-4">
+    <div class="flex-1 overflow-x-hidden overflow-y-auto p-4">
       <div v-if="items.length === 0" class="text-xs text-gray-400 px-2 italic dark:text-[var(--muted-color)]">暂无标题</div>
       <nav class="space-y-0.5">
         <div
@@ -175,9 +175,9 @@ watch(() => settingsStore.settings.outlineExpanded, applyDefault);
           class="group flex items-center py-1 pl-2 pr-2 rounded-md text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-600 dark:text-[var(--muted-color)] dark:hover:bg-[var(--active-bg)] dark:hover:text-[var(--text-color)] cursor-pointer transition-colors"
           @click="emit('scroll-to', item.pos)"
         >
-          <span v-if="hasChildrenSet.has(item.pos)" class="mr-0.5 inline-flex w-3 justify-center text-[0.65rem] leading-none text-gray-400 select-none hover:text-gray-600" @click.stop="toggle(item.pos)">{{ collapsed.has(item.pos) ? '▸' : '▾' }}</span>
-          <span v-else class="mr-0.5 inline-flex w-3"></span>
-          <span class="truncate">{{ item.text }}</span>
+          <span v-if="hasChildrenSet.has(item.pos)" class="mr-0.5 inline-flex w-3 shrink-0 justify-center text-[0.65rem] leading-none text-gray-400 select-none hover:text-gray-600" @click.stop="toggle(item.pos)">{{ collapsed.has(item.pos) ? '▸' : '▾' }}</span>
+          <span v-else class="mr-0.5 inline-flex w-3 shrink-0"></span>
+          <span class="min-w-0 flex-1 truncate">{{ item.text }}</span>
         </div>
       </nav>
     </div>
