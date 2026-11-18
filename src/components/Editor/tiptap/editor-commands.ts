@@ -4,6 +4,42 @@ export interface BubbleMenuActionData {
   href?: string;
 }
 
+/**
+ * 把当前选区转换为一个围栏代码块。
+ *
+ * 跨多个段落选择时，各段落按换行合并进同一个代码块，而不是拆成多个代码块，
+ * 因此这里直接构造 codeBlock 节点替换整块区间，而不走 toggleCodeBlock()。
+ * 选区位于列表、引用等嵌套结构内时，退回内置的 toggleCodeBlock()。
+ */
+function convertSelectionToCodeBlock(editor: TiptapEditor): boolean {
+  const { state } = editor;
+  const { from, to, empty } = state.selection;
+  const codeBlockType = state.schema.nodes.codeBlock;
+
+  if (!codeBlockType) return false;
+  if (empty) return editor.chain().focus().toggleCodeBlock().run();
+
+  const $from = state.doc.resolve(from);
+  const $to = state.doc.resolve(to);
+
+  // 只处理顶层块内的选区；嵌套结构交给内置命令
+  if ($from.depth !== 1 || $to.depth !== 1) {
+    return editor.chain().focus().toggleCodeBlock().run();
+  }
+
+  // 选区扩展到首尾所在整块，块间文本以换行分隔后写进单个代码块
+  const blockStart = $from.before(1);
+  const blockEnd = $to.after(1);
+  const text = state.doc.textBetween(blockStart, blockEnd, '\n', ' ');
+  const codeBlock = codeBlockType.create(
+    null,
+    text ? state.schema.text(text) : null,
+  );
+
+  editor.view.dispatch(state.tr.replaceWith(blockStart, blockEnd, codeBlock).scrollIntoView());
+  return true;
+}
+
 export function runBubbleMenuAction(
   editor: TiptapEditor | null,
   type: string,
@@ -44,6 +80,14 @@ export function runBubbleMenuAction(
       break;
     case 'paragraph':
       chain.setParagraph().run();
+      break;
+    // 转换为代码块：已在代码块内则还原为段落
+    case 'codeBlock':
+      if (editor.isActive('codeBlock')) {
+        chain.setParagraph().run();
+      } else {
+        convertSelectionToCodeBlock(editor);
+      }
       break;
     // ── 表格列/行操作 ──
     case 'table.addColumnBefore':

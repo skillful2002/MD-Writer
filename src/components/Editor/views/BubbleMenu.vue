@@ -18,6 +18,9 @@
       <button :class="btnClass(activeMarks.code)" title="行内代码" @click="exec('code')">
         <span class="font-mono text-sm">&lt;/&gt;</span>
       </button>
+      <button :class="btnClass(activeMarks.codeBlock)" title="转换为代码块" @click="exec('codeBlock')">
+        <span class="font-mono text-sm">{ }</span>
+      </button>
       <button :class="btnClass(activeMarks.link)" title="链接" @click="toggleLinkInput">
         <span>🔗</span>
       </button>
@@ -77,6 +80,7 @@ type ActiveMarks = {
   bold: boolean;
   italic: boolean;
   code: boolean;
+  codeBlock: boolean;
   link: boolean;
 };
 
@@ -92,6 +96,7 @@ const activeMarks = reactive({
   bold: false,
   italic: false,
   code: false,
+  codeBlock: false,
   link: false,
 });
 

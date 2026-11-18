@@ -224,6 +224,7 @@ function updateBubbleMenu(ed: TiptapEditor) {
     bold: ed.isActive('bold'),
     italic: ed.isActive('italic'),
     code: ed.isActive('code'),
+    codeBlock: ed.isActive('codeBlock'),
     link: ed.isActive('link'),
   };
 
