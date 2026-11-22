@@ -2,13 +2,21 @@
 
 本文档记录 MarkdownEd 各版本的变更内容，格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/)。
 
-## [未发布]
+## [v1.2.0]
 
 ### 新增
 - **三栏宽度可拖动**：左侧文件区、中间编辑区、右侧大纲区之间的两条分割线均可拖动，实时改变宽度，松开后写入 `settings.json`，重启后保持。
   - 中间编辑区始终保留至少 **50% 容器宽度**，两侧面板合计不得超过另一半；窗口变窄时自动把面板收回范围内。
   - 双击分割线恢复默认宽度（256px）；聚焦分割线后可用左右方向键微调（16px，按住 Shift 为 48px）。
   - 拖动过程中宽度只写本地状态，不触发配置持久化与主题重应用，避免拖动掉帧。
+- **macOS 双架构打包**：`scripts/pack-macos-dmg.sh` 支持 Apple Silicon 与 Intel 两个架构，新增 `MD_ED_MAC_ARCH` 指定目标三元组，产物命名对齐 tauri 习惯（`aarch64` / `x64`）。
+  - `npm run pack:mac` 打 arm64、`pack:mac:intel` 交叉编译 x86_64、`pack:mac:all` 一次出两个 dmg。
+  - 编译前校验对应 rustup target 是否已安装，缺失时给出 `rustup target add` 提示。
+
+### 优化
+- **打包脚本产物路径修正**：bundle 路径按 `target/<triple>/release/bundle` 推导，此前写死 `target/release/bundle`，带 `--target` 时必然找不到 `.app` 与 dmg。
+- **打包失败不再静默通过**：`hdiutil create / attach / convert` 失败即退出非零，产物校验为 FAIL 时同样返回非零，不再出现「实际失败却 exit 0」骗过 `pack:mac:all` 的情况。
+- 新增 `MD_ED_SKIP_BUILD=1`：复用已编译的 `.app`，只重做 dmg，重试时省掉几分钟编译时间。
 
 ## [v1.1.2]
 
