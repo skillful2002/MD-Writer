@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="./public/icon.png" width="160" alt="MarkdownEd Logo" />
+  <img src="./public/icon.png" width="160" alt="MD Writer Logo" />
 </p>
 
-<h1 align="center">纽新 (MarkdownEd)</h1>
+<h1 align="center">MD Writer</h1>
 
 <p align="center">
   <strong>本地优先的 Markdown 编辑器 · 基于 Tauri 2、Rust 领域内核与 TipTap</strong>
@@ -19,20 +19,20 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/skillful2002/MarkdownEd/releases">
-    <img src="https://img.shields.io/github/v/release/skillful2002/MarkdownEd?style=flat-square&color=blue" alt="Version" />
+  <a href="https://github.com/skillful2002/MD-Writer/releases">
+    <img src="https://img.shields.io/github/v/release/skillful2002/MD-Writer?style=flat-square&color=blue" alt="Version" />
   </a>
-  <a href="https://gitee.com/liuzhengguo/MarkdownEd">
+  <a href="https://gitee.com/liuzhengguo/MD-Writer">
     <img src="https://img.shields.io/badge/Gitee-liuzhengguo-red?style=flat-square&logo=gitee" alt="Gitee" />
   </a>
-  <a href="https://github.com/skillful2002/MarkdownEd/blob/main/LICENSE">
+  <a href="https://github.com/skillful2002/MD-Writer/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/License-Apache--2.0-green?style=flat-square" alt="Apache-2.0" />
   </a>
 </p>
 
 ## 项目简介
 
-**MarkdownEd**（中文名「纽新」）是一款跨平台、本地优先的 Markdown 编辑器。它用 Tauri 2 的桌面原生边界、Rust 领域内核与 TipTap 所见即所得编辑器，提供稳定、快速、可扩展的写作体验。所有文档、图片与工作区数据都保存在你自己的机器上，不上传云端。
+**MD Writer**是一款跨平台、本地优先的 Markdown 编辑器。它用 Tauri 2 的桌面原生边界、Rust 领域内核与 TipTap 所见即所得编辑器，提供稳定、快速、可扩展的写作体验。所有文档、图片与工作区数据都保存在你自己的机器上，不上传云端。
 
 > 当前版本：**1.2.0**
 
@@ -51,7 +51,7 @@
 
 ## 技术架构
 
-MarkdownEd 采用清晰的三层边界：
+MD Writer 采用清晰的三层边界：
 
 - **Vue 3 + Pinia + TipTap**：UI、编辑器交互与命令分发。
 - **Tauri 2**：插件、权限边界与命令 / 事件桥接。
@@ -98,4 +98,4 @@ cargo check --manifest-path src-tauri/Cargo.toml
 
 ## 许可证
 
-MarkdownEd 基于 [Apache License 2.0](LICENSE) 开源。
+MD Writer 基于 [Apache License 2.0](LICENSE) 开源。

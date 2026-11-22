@@ -1,14 +1,14 @@
-# MarkdownEd - Apache 2.0 License
+# MD Writer - Apache 2.0 License
 
-**Copyright © 2026 MarkdownEd Team**
+**Copyright © 2026 MD Writer Team**
 
 ---
 
 ## 📜 许可说明 / License
 
-MarkdownEd 采用 **Apache License 2.0** 开源。
+MD Writer 采用 **Apache License 2.0** 开源。
 
-MarkdownEd is licensed under the **Apache License 2.0**.
+MD Writer is licensed under the **Apache License 2.0**.
 
 ---
 
@@ -23,7 +23,7 @@ MarkdownEd is licensed under the **Apache License 2.0**.
 
 ## ⚠️ 限制 / Limitations
 
-- ❌ **商标使用** - 不能使用 MarkdownEd 商标
+- ❌ **商标使用** - 不能使用 MD Writer 商标
 - ℹ️ **保留声明** - 保留版权和许可声明
 
 ---

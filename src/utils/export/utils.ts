@@ -106,7 +106,7 @@ export function renderPlainText(document: ExportDocument): string {
 }
 
 export function mergeMetadataTitle(metadata: ExportMetadata, fallback: string): string {
-  return metadata.title.trim() || fallback.trim() || 'MarkdownEd Export';
+  return metadata.title.trim() || fallback.trim() || 'MD Writer Export';
 }
 
 export function wrapMarks(

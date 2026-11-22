@@ -154,13 +154,13 @@ export function useCommandDispatcher(options: CommandDispatcherOptions) {
         await options.showAbout();
         return true;
       case 'help.github':
-        await openUrl('https://github.com/skillful2002/MarkdownEd');
+        await openUrl('https://github.com/skillful2002/MD-Writer');
         return true;
       case 'help.gitee':
-        await openUrl('https://gitee.com/liuzhengguo/MarkdownEd');
+        await openUrl('https://gitee.com/liuzhengguo/MD-Writer');
         return true;
       case 'help.issues':
-        await openUrl('https://github.com/skillful2002/MarkdownEd/issues');
+        await openUrl('https://github.com/skillful2002/MD-Writer/issues');
         return true;
       case 'help.diagnostics':
         await revealStartupOpenLog();

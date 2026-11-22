@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# MarkdownEd macOS dmg build script (Apple Silicon / Intel).
+# MD Writer macOS dmg build script (Apple Silicon / Intel).
 #
-# 用途: 在本机(Apple Silicon)上打包 MarkdownEd 的 dmg 安装包, 支持两种架构:
+# 用途: 在本机(Apple Silicon)上打包 MD Writer 的 dmg 安装包, 支持两种架构:
 #   bash scripts/pack-macos-dmg.sh                                  # Apple Silicon (默认)
 #   MD_ED_MAC_ARCH=x86_64-apple-darwin bash scripts/pack-macos-dmg.sh  # Intel (交叉编译)
 #
@@ -22,10 +22,11 @@ ROOT="$(pwd)"
 # ---- 变量区 (对齐 build-win.bat 的 SET) ----
 MAC_ARCH="${MD_ED_MAC_ARCH:-aarch64-apple-darwin}"                # 对应 bat 的 TAURI_TARGET
 VERSION="$(node -p "require('./package.json').version")"
+PRODUCT_NAME="$(node -p "require('./src-tauri/tauri.conf.json').productName")"
 # 注意: 显式传 --target 时产物落在 target/<triple>/release/bundle, 不是 target/release/bundle
 BUNDLE="$ROOT/src-tauri/target/$MAC_ARCH/release/bundle"
 MACOS_DIR="$BUNDLE/macos"
-APP="$MACOS_DIR/MarkdownEd.app"
+APP="$MACOS_DIR/${PRODUCT_NAME}.app"
 
 # dmg 文件名后缀对齐 tauri 的命名习惯: aarch64 / x64
 case "$MAC_ARCH" in
@@ -33,10 +34,10 @@ case "$MAC_ARCH" in
   x86_64-apple-darwin) DMG_ARCH="x64" ;;
   *) DMG_ARCH="$MAC_ARCH" ;;
 esac
-DMG="$BUNDLE/dmg/MarkdownEd_${VERSION}_${DMG_ARCH}.dmg"
+DMG="$BUNDLE/dmg/${PRODUCT_NAME}_${VERSION}_${DMG_ARCH}.dmg"
 
 echo "============================================================"
-echo " MarkdownEd macOS build (dmg)"
+echo " ${PRODUCT_NAME} macOS build (dmg)"
 echo " repo root : $ROOT"
 echo " target    : $MAC_ARCH"
 echo " version   : $VERSION"
@@ -91,14 +92,14 @@ fi
 
 # tauri 产出的 dmg 名称跟版本/架构相关, 用 glob 兜住命名差异
 if [ -d "$BUNDLE/dmg" ]; then
-  PRODUCED="$(find "$BUNDLE/dmg" -maxdepth 1 -name "MarkdownEd_${VERSION}_*.dmg" 2>/dev/null | head -1)"
+  PRODUCED="$(find "$BUNDLE/dmg" -maxdepth 1 -name "${PRODUCT_NAME}_${VERSION}_*.dmg" 2>/dev/null | head -1)"
 fi
 
 if [ "$BUILD_OK" = "1" ] && [ -n "$PRODUCED" ] && hdiutil verify "$PRODUCED" >/dev/null 2>&1; then
   # tauri 全流程成功: 校验 dmg 是否含 Applications 链接
   CHK="/Volumes/MDChk_$$"
   hdiutil attach -readonly -nobrowse -noautoopen -mountpoint "$CHK" "$PRODUCED" 2>/dev/null
-  if [ -L "$CHK/Applications" ] && [ -d "$CHK/MarkdownEd.app" ]; then
+  if [ -L "$CHK/Applications" ] && [ -d "$CHK/${PRODUCT_NAME}.app" ]; then
     hdiutil detach "$CHK" 2>/dev/null || true
     DMG="$PRODUCED"
     echo "       tauri build produced a valid & complete dmg, use it directly"
@@ -130,7 +131,7 @@ done
 RW="$BUNDLE/dmg/_rw_build_$$.dmg"
 MP="/Volumes/MDTmp_$$"
 
-if ! hdiutil create -srcfolder "$MACOS_DIR" -volname MarkdownEd -fs HFS+ -format UDRW "$RW"; then
+if ! hdiutil create -srcfolder "$MACOS_DIR" -volname "$PRODUCT_NAME" -fs HFS+ -format UDRW "$RW"; then
   echo "[ERROR] hdiutil create failed (sandbox / 权限不足? 需访问 /Volumes 与目标 .app)"
   exit 1
 fi
@@ -153,7 +154,7 @@ hdiutil verify "$DMG" 2>&1 | tail -1 || FAIL=1
 CHK="/Volumes/MDChk_$$"
 if hdiutil attach -readonly -nobrowse -noautoopen -mountpoint "$CHK" "$DMG"; then
   [ -L "$CHK/Applications" ] && echo "       [OK] Applications link present" || { echo "       [ERROR] Applications link missing"; FAIL=1; }
-  [ -d "$CHK/MarkdownEd.app" ] && echo "       [OK] MarkdownEd.app present" || { echo "       [ERROR] MarkdownEd.app missing"; FAIL=1; }
+  [ -d "$CHK/${PRODUCT_NAME}.app" ] && echo "       [OK] ${PRODUCT_NAME}.app present" || { echo "       [ERROR] ${PRODUCT_NAME}.app missing"; FAIL=1; }
   hdiutil detach "$CHK" 2>/dev/null || true
 else
   echo "       [ERROR] cannot mount built dmg for verification"

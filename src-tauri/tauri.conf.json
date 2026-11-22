@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "MarkdownEd",
+  "productName": "MD Writer",
   "version": "1.2.0",
   "identifier": "tech.newxin-markdowned.app",
   "build": {
@@ -49,7 +49,7 @@
         "ext": ["md", "markdown"],
         "contentTypes": ["net.daringfireball.markdown", "public.plain-text", "public.text"],
         "name": "Markdown Document",
-        "description": "Open Markdown files with MarkdownEd",
+        "description": "Open Markdown files with MD Writer",
         "role": "Editor",
         "mimeType": "text/markdown"
       }

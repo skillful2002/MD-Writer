@@ -1,10 +1,10 @@
-# MarkdownEd Roadmap
+# MD Writer Roadmap
 
 更新时间：2026-04-24
 
 ## 项目定位
 
-MarkdownEd 是一款跨平台 Markdown 编辑器，目标是用桌面原生边界和结构化编辑器内核，提供稳定、快速、可扩展的本地优先写作体验。
+MD Writer 是一款跨平台 Markdown 编辑器，目标是用桌面原生边界和结构化编辑器内核，提供稳定、快速、可扩展的本地优先写作体验。
 
 ## 当前阶段
 

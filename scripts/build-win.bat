@@ -1,5 +1,5 @@
 @echo off
-REM MarkdownEd Windows NSIS build script (ASCII only, no code-block parentheses)
+REM MD Writer Windows NSIS build script (ASCII only, no code-block parentheses)
 SET "SCRIPT_DIR=%~dp0"
 SET "ROOT_DIR=%SCRIPT_DIR%.."
 PUSHD "%ROOT_DIR%" >nul 2>&1
@@ -7,7 +7,7 @@ SET "TAURI_TARGET=x86_64-pc-windows-msvc"
 SET "BUNDLE_DIR=src-tauri\target\%TAURI_TARGET%\release\bundle"
 SET "VCVARS=C:/Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
 echo ============================================================
-echo  MarkdownEd Windows build (NSIS)
+echo  MD Writer Windows build (NSIS)
 echo  repo root : %CD%
 echo  target    : %TAURI_TARGET%
 echo ============================================================

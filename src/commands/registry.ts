@@ -464,7 +464,7 @@ export const COMMANDS: CommandDefinition[] = [
   },
   {
     id: 'help.about',
-    title: '关于 MarkdownEd',
+    title: '关于 MD Writer',
     description: '显示应用版本与项目信息',
     icon: 'ℹ️',
     scope: 'app',
@@ -498,7 +498,7 @@ export const COMMANDS: CommandDefinition[] = [
   },
   {
     id: 'app.quit',
-    title: '退出 MarkdownEd',
+    title: '退出 MD Writer',
     description: '退出当前应用',
     scope: 'app',
     group: 'help',

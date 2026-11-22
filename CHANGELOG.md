@@ -1,6 +1,6 @@
 # 更新日志
 
-本文档记录 MarkdownEd 各版本的变更内容，格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/)。
+本文档记录 MD Writer 各版本的变更内容，格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/)。
 
 ## [v1.2.0]
 

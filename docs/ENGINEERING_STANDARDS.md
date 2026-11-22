@@ -1,8 +1,8 @@
-# MarkdownEd Engineering Standards
+# MD Writer Engineering Standards
 
 更新时间：2026-06-11
 
-本文件是 MarkdownEd 后续开发和 Code Review 的硬约束。
+本文件是 MD Writer 后续开发和 Code Review 的硬约束。
 
 ## 1. Tauri 原则
 

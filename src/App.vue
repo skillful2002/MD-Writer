@@ -266,7 +266,7 @@ const windowSession = useAppWindowSession({
 
 function showAbout() {
   message(
-    `纽新 (MarkdownEd) v${appVersion}\n\n一款高性能、自研内核的 Markdown 编辑器\n\nGitHub: https://github.com/skillful2002/MarkdownEd\nGitee: https://gitee.com/liuzhengguo/MarkdownEd\n\n© 2026 newxin.tech`,
+    `MD Writer v${appVersion}\n\n一款高性能、自研内核的 Markdown 编辑器\n\nGitHub: https://github.com/skillful2002/MD-Writer\nGitee: https://gitee.com/liuzhengguo/MD-Writer\n\n© 2026 newxin.tech`,
     {
       title: '关于',
       kind: 'info',

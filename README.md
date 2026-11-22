@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="./public/icon.png" width="160" alt="MarkdownEd Logo" />
+  <img src="./public/icon.png" width="160" alt="MD Writer Logo" />
 </p>
 
-<h1 align="center">MarkdownEd</h1>
+<h1 align="center">MD Writer</h1>
 
 <p align="center">
   <strong>A local-first Markdown editor built with Tauri 2, a Rust domain core, and TipTap.</strong>
@@ -19,20 +19,20 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/skillful2002/MarkdownEd/releases">
-    <img src="https://img.shields.io/github/v/release/skillful2002/MarkdownEd?style=flat-square&color=blue" alt="Version" />
+  <a href="https://github.com/skillful2002/MD-Writer/releases">
+    <img src="https://img.shields.io/github/v/release/skillful2002/MD-Writer?style=flat-square&color=blue" alt="Version" />
   </a>
-  <a href="https://gitee.com/liuzhengguo/MarkdownEd">
+  <a href="https://gitee.com/liuzhengguo/MD-Writer">
     <img src="https://img.shields.io/badge/Gitee-liuzhengguo-red?style=flat-square&logo=gitee" alt="Gitee" />
   </a>
-  <a href="https://github.com/skillful2002/MarkdownEd/blob/main/LICENSE">
+  <a href="https://github.com/skillful2002/MD-Writer/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/License-Apache--2.0-green?style=flat-square" alt="Apache-2.0" />
   </a>
 </p>
 
 ## Overview
 
-**MarkdownEd** is a cross-platform, local-first Markdown editor. It combines Tauri 2's native desktop boundaries, a Rust domain core, and a TipTap WYSIWYG editor to deliver a stable, fast, and extensible writing experience. All documents, images, and workspaces stay on your machine — nothing is uploaded to the cloud.
+**MD Writer** is a cross-platform, local-first Markdown editor. It combines Tauri 2's native desktop boundaries, a Rust domain core, and a TipTap WYSIWYG editor to deliver a stable, fast, and extensible writing experience. All documents, images, and workspaces stay on your machine — nothing is uploaded to the cloud.
 
 > Current version: **1.0.0**
 
@@ -50,7 +50,7 @@
 
 ## Architecture
 
-MarkdownEd uses three clear layers:
+MD Writer uses three clear layers:
 
 - **Vue 3 + Pinia + TipTap**: UI, editor interactions, and command dispatch.
 - **Tauri 2**: plugins, permission boundaries, and the command/event bridge.
@@ -97,4 +97,4 @@ More design and development conventions live in the `docs/` directory:
 
 ## License
 
-MarkdownEd is open source under the [Apache License 2.0](LICENSE).
+MD Writer is open source under the [Apache License 2.0](LICENSE).

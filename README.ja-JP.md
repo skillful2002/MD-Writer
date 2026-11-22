@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="./public/icon.png" width="160" alt="MarkdownEd Logo" />
+  <img src="./public/icon.png" width="160" alt="MD Writer Logo" />
 </p>
 
-<h1 align="center">MarkdownEd</h1>
+<h1 align="center">MD Writer</h1>
 
 <p align="center">
   <strong>Tauri 2、Rust ドメインコア、TipTap で構築されたローカルファーストの Markdown エディター</strong>
@@ -19,13 +19,13 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/skillful2002/MarkdownEd/releases">
-    <img src="https://img.shields.io/github/v/release/skillful2002/MarkdownEd?style=flat-square&color=blue" alt="Version" />
+  <a href="https://github.com/skillful2002/MD-Writer/releases">
+    <img src="https://img.shields.io/github/v/release/skillful2002/MD-Writer?style=flat-square&color=blue" alt="Version" />
   </a>
-  <a href=https://gitee.com/liuzhengguo/MarkdownEd">
+  <a href="https://gitee.com/liuzhengguo/MD-Writer">
     <img src="https://img.shields.io/badge/Gitee-liuzhengguo-red?style=flat-square&logo=gitee" alt="Gitee" />
   </a>
-  <a href="https://github.com/skillful2002/MarkdownEd/blob/main/LICENSE">
+  <a href="https://github.com/skillful2002/MD-Writer/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/License-Apache--2.0-green?style=flat-square" alt="Apache-2.0" />
   </a>
 </p>
@@ -40,7 +40,7 @@
 
 ## アーキテクチャ
 
-MarkdownEd は明確な 3 層構造を採用しています。
+MD Writer は明確な 3 層構造を採用しています。
 
 - Vue 3 + Pinia + TipTap：UI、エディター体験、コマンドディスパッチを担当します。
 - Tauri 2：プラグイン、権限境界、コマンド / イベントブリッジを担当します。
@@ -99,4 +99,4 @@ cargo check --manifest-path src-tauri/Cargo.toml
 
 ## License
 
-MarkdownEd は [Apache License 2.0](LICENSE) のもとで公開されています。
+MD Writer は [Apache License 2.0](LICENSE) のもとで公開されています。
