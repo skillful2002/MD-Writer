@@ -11,6 +11,7 @@ import { useExportActions } from './composables/useExportActions';
 import { useImagePreview } from './composables/useImagePreview';
 import { useMenuEvents } from './composables/useMenuEvents';
 import { useMenuShortcutsSync } from './composables/useMenuShortcutsSync';
+import { usePanelResize, PANEL_WIDTH_LIMITS } from './composables/usePanelResize';
 import { useWorkspaceSession } from './composables/useWorkspaceSession';
 import CommandPalette from './components/Editor/CommandPalette.vue';
 import ImageFullscreenOverlay from './components/Editor/ImageFullscreenOverlay.vue';
@@ -18,6 +19,7 @@ import ImagePreviewView from './components/Editor/ImagePreviewView.vue';
 import ShortcutsModal from './components/Editor/ShortcutsModal.vue';
 import Sidebar from './components/Editor/Sidebar.vue';
 import SourceEditorView from './components/Editor/SourceEditorView.vue';
+import PanelResizer from './components/Layout/PanelResizer.vue';
 import StatusBar from './components/Layout/StatusBar.vue';
 import TitleBar from './components/Layout/TitleBar.vue';
 import SettingsModal from './components/Settings/SettingsModal.vue';
@@ -119,6 +121,36 @@ const {
   openShortcutsModal,
   showImagePasteWarning,
 } = useAppUiState();
+
+// ── 三栏宽度拖动 ──────────────────────────────────────────────
+// 宽度在拖动过程中只写本地 ref（每帧更新配置会触发主题重应用，掉帧），
+// mouseup / 键盘微调结束时才提交到 settings 持久化。
+const panelContainerRef = ref<HTMLElement | null>(null);
+const sidebarWidth = ref<number>(PANEL_WIDTH_LIMITS.sidebar.default);
+const outlineWidth = ref<number>(PANEL_WIDTH_LIMITS.outline.default);
+
+const { activeSide, startResize, resetWidth, nudgeWidth, refreshLimits } = usePanelResize({
+  sidebarWidth,
+  outlineWidth,
+  containerRef: panelContainerRef,
+  onCommit: () => {
+    settingsStore.updateSetting('sidebarWidth', sidebarWidth.value);
+    settingsStore.updateSetting('outlineWidth', outlineWidth.value);
+  },
+});
+
+// 配置加载完成 / 恢复默认设置后，把持久化宽度同步回本地值（拖动中不打断），
+// 并按当前窗口宽度重新收进「编辑区至少 50%」的约束
+watch(
+  () => [settings.value.sidebarWidth, settings.value.outlineWidth] as const,
+  ([nextSidebarWidth, nextOutlineWidth]) => {
+    if (activeSide.value) return;
+    sidebarWidth.value = nextSidebarWidth;
+    outlineWidth.value = nextOutlineWidth;
+    refreshLimits();
+  },
+  { immediate: true },
+);
 
 // 模式切换时，把「切换前所在源码行」暂存下来，供两个视图挂载后恢复光标位置
 const pendingCursorLine = ref<number | null>(null);
@@ -318,6 +350,8 @@ useMenuEvents(async (commandId) => {
 
 onMounted(async () => {
   await settingsStore.init();
+  // 容器此时已完成首次布局，按真实宽度再收紧一次面板宽度
+  refreshLimits();
   await workspaceSession.setup();
   await windowSession.setup();
   await syncMenuShortcuts();
@@ -348,10 +382,12 @@ onUnmounted(() => {
       @toggle-source="onToggleSource"
     />
 
-    <div class="flex-1 flex overflow-hidden">
+    <div ref="panelContainerRef" class="flex-1 flex overflow-hidden">
       <aside
         v-show="isSidebarOpen && !isSourceMode && !settingsStore.isFocusMode"
-        class="w-64 flex-shrink-0 transition-all duration-300"
+        class="flex-shrink-0 overflow-hidden"
+        :class="{ 'transition-all duration-300': !activeSide }"
+        :style="{ width: sidebarWidth + 'px' }"
       >
         <Sidebar
           :tree-nodes="treeNodes"
@@ -378,8 +414,17 @@ onUnmounted(() => {
         />
       </aside>
 
+      <PanelResizer
+        v-if="isSidebarOpen && !isSourceMode && !settingsStore.isFocusMode"
+        side="sidebar"
+        :active="activeSide === 'sidebar'"
+        @start="(event) => startResize('sidebar', event)"
+        @reset="resetWidth('sidebar')"
+        @nudge="(delta) => nudgeWidth('sidebar', delta)"
+      />
+
       <main
-        class="flex-1 relative overflow-hidden select-text"
+        class="flex-1 min-w-0 relative overflow-hidden select-text"
         :class="{ 'focus-mode-editor': settingsStore.isFocusMode }"
       >
         <MarkdownEditor
@@ -406,10 +451,24 @@ onUnmounted(() => {
         />
       </main>
 
+      <PanelResizer
+        v-if="isOutlineOpen && !isSourceMode && !settingsStore.isFocusMode"
+        side="outline"
+        :active="activeSide === 'outline'"
+        @start="(event) => startResize('outline', event)"
+        @reset="resetWidth('outline')"
+        @nudge="(delta) => nudgeWidth('outline', delta)"
+      />
+
       <aside
         v-show="isOutlineOpen && !isSourceMode && !settingsStore.isFocusMode"
-        class="w-64 flex-shrink-0 flex flex-col border-l overflow-hidden transition-all duration-300"
-        style="background-color: var(--sidebar-bg); border-color: var(--border-color)"
+        class="flex-shrink-0 flex flex-col border-l overflow-hidden"
+        :class="{ 'transition-all duration-300': !activeSide }"
+        :style="{
+          width: outlineWidth + 'px',
+          backgroundColor: 'var(--sidebar-bg)',
+          borderColor: 'var(--border-color)',
+        }"
       >
         <SidebarOutlinePanel
           :doc-id="fileStore.currentFile.path || ('new-' + newDocSeq)"

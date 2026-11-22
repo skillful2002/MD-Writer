@@ -295,6 +295,17 @@ html.focus-mode .statusbar-container:hover {
   pointer-events: auto !important;
 }
 
+/* ── 面板宽度拖动（左右分区拖拽中） ────────────────────────── */
+body.panel-resizing,
+body.panel-resizing * {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+
+body.panel-resizing .panel-resizer {
+  background-color: var(--primary-light);
+}
+
 /* ── 深色模式下 highlight.js 代码高亮 ─────────────────────── */
 html.dark .hljs {
   background: transparent;

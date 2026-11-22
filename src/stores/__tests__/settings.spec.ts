@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ThemeColors } from '../../themes/types';
+import { PANEL_WIDTH_LIMITS } from '../../composables/usePanelResize';
 import { normalizeSettings } from '../settings';
 
 function createColors(overrides: Partial<ThemeColors> = {}): ThemeColors {
@@ -83,7 +84,9 @@ describe('normalizeSettings', () => {
     expect(normalized.activeThemeId).toBe('default-light');
     expect(normalized.autoSave).toBe(false);
     expect(normalized.showLineNumbers).toBe(false);
-    expect(normalized.configVersion).toBe(5);
+    expect(normalized.sidebarWidth).toBe(PANEL_WIDTH_LIMITS.sidebar.default);
+    expect(normalized.outlineWidth).toBe(PANEL_WIDTH_LIMITS.outline.default);
+    expect(normalized.configVersion).toBe(6);
   });
 
   it('preserves current-format stored themes and updates config version', () => {
@@ -106,6 +109,6 @@ describe('normalizeSettings', () => {
       id: 'custom-42',
       appearance: 'dark',
     });
-    expect(normalized.configVersion).toBe(5);
+    expect(normalized.configVersion).toBe(6);
   });
 });

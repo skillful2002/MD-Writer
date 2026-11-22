@@ -8,6 +8,7 @@ import {
   writeStoredFocusMode,
   writeStoredSettings,
 } from '../services/tauri/store';
+import { PANEL_WIDTH_LIMITS } from '../composables/usePanelResize';
 
 export interface Settings {
   /** Current app theme ID */
@@ -44,6 +45,10 @@ export interface Settings {
   recentFilesInSidebar: number;
   /** 菜单「打开历史记录」中显示的最近打开文件夹数量 */
   recentFoldersInMenu: number;
+  /** 左侧文件列表面板宽度（px） */
+  sidebarWidth: number;
+  /** 右侧大纲面板宽度（px） */
+  outlineWidth: number;
   /** Config version */
   configVersion: number;
 }
@@ -65,10 +70,12 @@ const DEFAULT_SETTINGS: Settings = {
   recentFoldersInSidebar: 10,
   recentFoldersInMenu: 10,
   recentFilesInSidebar: 10,
-  configVersion: 5,
+  sidebarWidth: PANEL_WIDTH_LIMITS.sidebar.default,
+  outlineWidth: PANEL_WIDTH_LIMITS.outline.default,
+  configVersion: 6,
 };
 
-const CURRENT_CONFIG_VERSION = 5;
+const CURRENT_CONFIG_VERSION = 6;
 let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 let stopSettingsWatcher: WatchStopHandle | null = null;
 let stopFocusModeWatcher: WatchStopHandle | null = null;
